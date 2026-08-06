@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BSC Strategy Game</title>
+    <script src="/_sdk/element_sdk.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        box-sizing: border-box;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      @keyframes pulse-glow {
+        0%,
+        100% {
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+        50% {
+          box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+        }
+      }
+
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-5px);
+        }
+        75% {
+          transform: translateX(5px);
+        }
+      }
+
+      @keyframes success-bounce {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      @keyframes firework {
+        0% {
+          transform: translate(0, 0);
+          opacity: 1;
+        }
+        100% {
+          transform: translate(var(--x), var(--y));
+          opacity: 0;
+        }
+      }
+
+      .firework-particle {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        animation: firework 1s ease-out forwards;
+      }
+
+      .dragging {
+        opacity: 0.5;
+        transform: rotate(5deg);
+      }
+
+      .drag-over {
+        background-color: rgba(59, 130, 246, 0.1);
+        border-color: #3b82f6;
+        animation: pulse-glow 1s infinite;
+      }
+
+      .shake-animation {
+        animation: shake 0.4s ease-in-out;
+      }
+
+      .success-animation {
+        animation: success-bounce 0.6s ease-in-out;
+      }
+
+      .card-item {
+        transition: all 0.3s ease;
+        cursor: grab;
+      }
+
+      .card-item:active {
+        cursor: grabbing;
+      }
+
+      .card-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+
+      .drop-zone {
+        min-height: 120px;
+        transition: all 0.3s ease;
+      }
+
+      .perspective-card {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.9) 0%,
+          rgba(255, 255, 255, 0.95) 100%
+        );
+        backdrop-filter: blur(10px);
+      }
+
+      .floating-icon {
+        animation: float 3s ease-in-out infinite;
+      }
+    </style>
+    <style>
+      @view-transition {
+        navigation: auto;
+      }
+    </style>
+    <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  </head>
+  <body class="h-full">
+    <div
+      id="app"
+      class="w-full h-full bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 overflow-auto"
+    >
+      <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-6">
+          <a
+            href="../../"
+            class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-400 hover:bg-blue-50"
+          >
+            ← Về danh sách game
+          </a>
+        </div>
+        <!-- Header -->
+        <div class="text-center mb-8">
+          <h1
+            id="gameTitle"
+            class="text-4xl py-2 sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-3 floating-icon"
+          >
+            Xây dựng Chiến Lược BSC
+          </h1>
+          <p
+            id="instructionText"
+            class="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed"
+          >
+            Kéo thả các mục tiêu vào đúng 4 góc nhìn của công cụ BSC
+          </p>
+        </div>
+        <!-- Main Game Layout: Cards Pool on Left, Drop Zones on Right -->
+        <div class="flex flex-col lg:flex-row gap-6 mb-8">
+          <!-- Available Cards Pool - LEFT SIDE -->
+          <div
+            class="w-full lg:w-1/3 perspective-card rounded-2xl shadow-xl p-6 border-2 border-gray-300"
+          >
+            <div class="flex items-center gap-3 mb-4">
+              <span class="text-3xl">🎴</span>
+              <h2 class="text-xl font-bold text-gray-700">
+                Các mục tiêu cần sắp xếp
+              </h2>
+            </div>
+            <div
+              id="cardPool"
+              class="grid grid-cols-1 gap-2 max-h-[600px] overflow-y-auto pr-2"
+            ></div>
+          </div>
+          <!-- Drop Zones Grid - RIGHT SIDE -->
+          <div class="w-full lg:w-2/3 grid grid-cols-2 gap-4">
+            <!-- Row 1: Financial & Customer -->
+            <!-- Financial Perspective -->
+            <div
+              class="perspective-card rounded-2xl shadow-xl p-5 border-2 border-yellow-300"
+            >
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-3xl">💰</span>
+                <h2 class="text-xl font-bold text-yellow-700">Tài chính</h2>
+              </div>
+              <div
+                id="financial"
+                class="drop-zone bg-yellow-50 rounded-xl p-3 border-2 border-dashed border-yellow-200 min-h-[250px] flex flex-col gap-2"
+              ></div>
+            </div>
+            <!-- Customer Perspective -->
+            <div
+              class="perspective-card rounded-2xl shadow-xl p-5 border-2 border-green-300"
+            >
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-3xl">🤝</span>
+                <h2 class="text-xl font-bold text-green-700">Khách hàng</h2>
+              </div>
+              <div
+                id="customer"
+                class="drop-zone bg-green-50 rounded-xl p-3 border-2 border-dashed border-green-200 min-h-[250px] flex flex-col gap-2"
+              ></div>
+            </div>
+            <!-- Row 2: Internal Process & Learning -->
+            <!-- Internal Process Perspective -->
+            <div
+              class="perspective-card rounded-2xl shadow-xl p-5 border-2 border-blue-300"
+            >
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-3xl">⚙️</span>
+                <h2 class="text-xl font-bold text-blue-700">
+                  Quy trình nội bộ
+                </h2>
+              </div>
+              <div
+                id="internal"
+                class="drop-zone bg-blue-50 rounded-xl p-3 border-2 border-dashed border-blue-200 min-h-[250px] flex flex-col gap-2"
+              ></div>
+            </div>
+            <!-- Learning & Growth Perspective -->
+            <div
+              class="perspective-card rounded-2xl shadow-xl p-5 border-2 border-purple-300"
+            >
+              <div class="flex items-center gap-2 mb-3">
+                <span class="text-3xl">🎓</span>
+                <h2 class="text-xl font-bold text-purple-700">
+                  Học hỏi &amp; Phát triển
+                </h2>
+              </div>
+              <div
+                id="learning"
+                class="drop-zone bg-purple-50 rounded-xl p-3 border-2 border-dashed border-purple-200 min-h-[250px] flex flex-col gap-2"
+              ></div>
+            </div>
+          </div>
+        </div>
+        <!-- Action Buttons -->
+        <div class="text-center">
+          <div id="beforeSubmit" class="inline-block">
+            <button
+              id="submitBtn"
+              class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-12 rounded-full text-xl shadow-lg transform transition hover:scale-105"
+            >
+              🎯 Nộp kết quả
+            </button>
+          </div>
+          <div
+            id="afterSubmit"
+            class="hidden flex gap-4 justify-center flex-wrap"
+          >
+            <button
+              id="showResultBtn"
+              class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg transform transition hover:scale-105"
+            >
+              📊 Xem kết quả
+            </button>
+            <button
+              id="showAnswersMainBtn"
+              class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg transform transition hover:scale-105"
+            >
+              📝 Xem đáp án
+            </button>
+            <button
+              id="autoArrangeMainBtn"
+              class="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg transform transition hover:scale-105"
+            >
+              ✨ Hiển thị đáp án đúng
+            </button>
+            <button
+              id="playAgainBtn"
+              class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-4 px-8 rounded-full text-xl shadow-lg transform transition hover:scale-105"
+            >
+              🔄 Chơi lại
+            </button>
+          </div>
+        </div>
+        <!-- Fireworks Container -->
+        <div
+          id="fireworksContainer"
+          class="hidden fixed inset-0 pointer-events-none z-40"
+        ></div>
+        <!-- Result Modal -->
+        <div
+          id="resultModal"
+          class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+        >
+          <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
+            <div class="text-center">
+              <div id="resultIcon" class="text-8xl mb-4"></div>
+              <h3 id="resultTitle" class="text-3xl font-bold mb-4"></h3>
+              <p id="resultMessage" class="text-xl text-gray-700 mb-6"></p>
+              <button
+                id="closeModal"
+                class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.addEventListener('contextmenu', event => event.preventDefault());
+
+      const defaultConfig = {
+        game_title: "Xây dựng chiến lược BSC",
+        instruction_text:
+          "Kéo thả các mục tiêu vào đúng góc nhìn BSC",
+        submit_button_text: "🎯 Nộp kết quả",
+        primary_color: "#3b82f6",
+        secondary_color: "#8b5cf6",
+        surface_color: "#ffffff",
+        text_color: "#374151",
+        background_color: "#f0f9ff",
+      };
+
+      const gameData = {
+        financial: [
+          "Doanh thu toàn hệ thống tăng 25% so với năm trước",
+          "Tăng biên lợi nhuận ròng thêm 3 điểm phần trăm",
+          "Chi phí vận hành trung bình/đơn hàng giảm 10%",
+        ],
+        customer: [
+          "Tỷ lệ khách hàng quay lại mua ≥ 65%",
+          "Điểm hài lòng khách hàng trung bình đạt ≥ 4.6/5",
+          "NPS (chỉ số sẵn sàng giới thiệu) đạt ≥ 60 điểm",
+        ],
+        internal: [
+          "Rút ngắn thời gian xử lý đơn hàng còn dưới 1 giờ",
+          "Tỷ lệ giao hàng đúng hẹn đạt ≥ 95%",
+          "Chuẩn hóa quy trình nhập – xuất kho tại tất cả chi nhánh",
+        ],
+        learning: [
+          "Đào tạo kỹ năng CSKH cho toàn bộ nhân viên tiền tuyến",
+          "Triển khai hệ thống CRM để theo dõi hành trình khách hàng",
+          "Khuyến khích nhân viên đề xuất sáng kiến cải tiến hàng tháng",
+        ],
+        distractors: [
+          "Thiết kế lại đồng phục nhân viên cho đẹp hơn",
+          "Mở tiệc tất niên mỗi quý cho nhân viên",
+          "Gắn camera tại kho để quản lý nhân sự",
+        ],
+      };
+
+      let draggedElement = null;
+      let allCards = [];
+
+      function initGame() {
+        allCards = [
+          ...gameData.financial.map((text) => ({ text, correct: "financial" })),
+          ...gameData.customer.map((text) => ({ text, correct: "customer" })),
+          ...gameData.internal.map((text) => ({ text, correct: "internal" })),
+          ...gameData.learning.map((text) => ({ text, correct: "learning" })),
+          ...gameData.distractors.map((text) => ({
+            text,
+            correct: "distractor",
+          })),
+        ];
+
+        allCards.sort(() => Math.random() - 0.5);
+        renderCards();
+        setupEventListeners();
+      }
+
+      function renderCards() {
+        const cardPool = document.getElementById("cardPool");
+        cardPool.innerHTML = "";
+
+        allCards.forEach((card, index) => {
+          const cardEl = document.createElement("div");
+          cardEl.className =
+            "card-item bg-white rounded-xl p-4 shadow-md border-2 border-gray-200";
+          cardEl.draggable = true;
+          cardEl.dataset.index = index;
+          cardEl.innerHTML = `<p class="text-gray-800 font-medium">${card.text}</p>`;
+
+          cardEl.addEventListener("dragstart", handleDragStart);
+          cardEl.addEventListener("dragend", handleDragEnd);
+
+          cardPool.appendChild(cardEl);
+        });
+      }
+
+      function handleDragStart(e) {
+        draggedElement = e.target;
+        e.target.classList.add("dragging");
+        playSound("pickup");
+      }
+
+      function handleDragEnd(e) {
+        e.target.classList.remove("dragging");
+        draggedElement = null;
+      }
+
+      function handleDragOver(e) {
+        e.preventDefault();
+      }
+
+      function handleDragEnter(e) {
+        if (e.target.classList.contains("drop-zone")) {
+          e.target.classList.add("drag-over");
+        }
+      }
+
+      function handleDragLeave(e) {
+        if (e.target.classList.contains("drop-zone")) {
+          e.target.classList.remove("drag-over");
+        }
+      }
+
+      function handleDrop(e) {
+        e.preventDefault();
+        const dropZone = e.target.closest(".drop-zone");
+        if (dropZone && draggedElement) {
+          dropZone.classList.remove("drag-over");
+          dropZone.appendChild(draggedElement);
+          playSound("drop");
+
+          // Add remove button if in a drop zone (not in card pool)
+          addRemoveButton(draggedElement);
+
+          // Update color if answers are being shown
+          if (draggedElement.style.backgroundColor) {
+            updateCardColor(draggedElement, dropZone.id);
+          }
+        }
+      }
+
+      function addRemoveButton(card) {
+        // Check if button already exists
+        if (card.querySelector(".remove-btn")) return;
+
+        const removeBtn = document.createElement("button");
+        removeBtn.className =
+          "remove-btn absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold shadow-md transition-all hover:scale-110";
+        removeBtn.innerHTML = "×";
+        removeBtn.onclick = (e) => {
+          e.stopPropagation();
+          removeCardFromZone(card);
+        };
+
+        card.style.position = "relative";
+        card.appendChild(removeBtn);
+      }
+
+      function removeCardFromZone(card) {
+        const cardPool = document.getElementById("cardPool");
+
+        // Remove the X button
+        const removeBtn = card.querySelector(".remove-btn");
+        if (removeBtn) {
+          removeBtn.remove();
+        }
+
+        // Reset card styling
+        card.style.backgroundColor = "";
+        card.style.borderColor = "";
+        card.style.borderWidth = "";
+        card.classList.remove("shake-animation", "success-animation");
+
+        // Move back to card pool
+        cardPool.appendChild(card);
+        playSound("pickup");
+      }
+
+      function updateCardColor(card, zoneId) {
+        const cardIndex = parseInt(card.dataset.index);
+        const cardData = allCards[cardIndex];
+        const isCorrect = cardData.correct === zoneId;
+
+        if (isCorrect) {
+          card.style.backgroundColor = "#dcfce7";
+          card.style.borderColor = "#16a34a";
+          card.style.borderWidth = "3px";
+        } else {
+          card.style.backgroundColor = "#fee2e2";
+          card.style.borderColor = "#dc2626";
+          card.style.borderWidth = "3px";
+        }
+      }
+
+      function setupEventListeners() {
+        const dropZones = document.querySelectorAll(".drop-zone");
+        dropZones.forEach((zone) => {
+          zone.addEventListener("dragover", handleDragOver);
+          zone.addEventListener("dragenter", handleDragEnter);
+          zone.addEventListener("dragleave", handleDragLeave);
+          zone.addEventListener("drop", handleDrop);
+        });
+
+        document
+          .getElementById("submitBtn")
+          .addEventListener("click", checkAnswers);
+        document
+          .getElementById("closeModal")
+          .addEventListener("click", closeModal);
+        document
+          .getElementById("showResultBtn")
+          .addEventListener("click", showResultModal);
+        document
+          .getElementById("showAnswersMainBtn")
+          .addEventListener("click", showAnswerDetails);
+        document
+          .getElementById("autoArrangeMainBtn")
+          .addEventListener("click", autoArrangeAnswers);
+        document
+          .getElementById("playAgainBtn")
+          .addEventListener("click", resetGame);
+      }
+
+      function checkAnswers() {
+        const zones = ["financial", "customer", "internal", "learning"];
+        let correctCount = 0;
+        const results = [];
+
+        // Calculate total correct answers in database (exclude distractors)
+        const totalCorrectAnswers =
+          gameData.financial.length +
+          gameData.customer.length +
+          gameData.internal.length +
+          gameData.learning.length;
+
+        // Save user's answers before checking
+        userAnswers = {};
+        zones.forEach((zoneId) => {
+          const zone = document.getElementById(zoneId);
+          const cards = zone.querySelectorAll(".card-item");
+
+          cards.forEach((card) => {
+            const cardIndex = parseInt(card.dataset.index);
+            userAnswers[cardIndex] = zoneId; // Store which zone the user placed this card
+
+            const cardData = allCards[cardIndex];
+            const isCorrect = cardData.correct === zoneId;
+
+            if (isCorrect) {
+              correctCount++;
+              card.classList.add("success-animation");
+            } else {
+              card.classList.add("shake-animation");
+            }
+
+            results.push({
+              zone: zoneId,
+              text: cardData.text,
+              correct: isCorrect,
+            });
+          });
+        });
+
+        setTimeout(() => {
+          showResults(correctCount, totalCorrectAnswers, results);
+        }, 600);
+      }
+
+      function createFireworks() {
+        const container = document.getElementById("fireworksContainer");
+        container.classList.remove("hidden");
+        container.innerHTML = "";
+
+        const colors = [
+          "#ff6b6b",
+          "#4ecdc4",
+          "#45b7d1",
+          "#f9ca24",
+          "#6c5ce7",
+          "#a29bfe",
+          "#fd79a8",
+          "#fab1a0",
+        ];
+
+        for (let i = 0; i < 8; i++) {
+          setTimeout(() => {
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * (window.innerHeight * 0.6) + 100;
+
+            for (let j = 0; j < 30; j++) {
+              const particle = document.createElement("div");
+              particle.className = "firework-particle";
+              particle.style.left = x + "px";
+              particle.style.top = y + "px";
+              particle.style.backgroundColor =
+                colors[Math.floor(Math.random() * colors.length)];
+
+              const angle = (Math.PI * 2 * j) / 30;
+              const velocity = 50 + Math.random() * 100;
+              particle.style.setProperty(
+                "--x",
+                Math.cos(angle) * velocity + "px"
+              );
+              particle.style.setProperty(
+                "--y",
+                Math.sin(angle) * velocity + "px"
+              );
+
+              container.appendChild(particle);
+
+              setTimeout(() => particle.remove(), 1000);
+            }
+          }, i * 300);
+        }
+
+        setTimeout(() => {
+          container.classList.add("hidden");
+        }, 3000);
+      }
+
+      let currentResults = [];
+      let lastScore = { correctCount: 0, totalCorrectAnswers: 0 };
+      let userAnswers = {}; // Store user's answer positions before showing correct answers
+
+      function showResults(correctCount, totalCorrectAnswers, results) {
+        currentResults = results;
+        lastScore = { correctCount, totalCorrectAnswers };
+
+        const modal = document.getElementById("resultModal");
+        const icon = document.getElementById("resultIcon");
+        const title = document.getElementById("resultTitle");
+        const message = document.getElementById("resultMessage");
+
+        const percentage =
+          totalCorrectAnswers > 0
+            ? Math.round((correctCount / totalCorrectAnswers) * 100)
+            : 0;
+
+        if (percentage >= 90) {
+          icon.textContent = "🏆";
+          title.textContent = "Xuất sắc!";
+          message.textContent = `Bạn đã đúng ${correctCount}/${totalCorrectAnswers} mục tiêu (${percentage}%)`;
+          playCelebrationSound();
+          createFireworks();
+        } else if (percentage >= 70) {
+          icon.textContent = "🎉";
+          title.textContent = "Tốt lắm!";
+          message.textContent = `Bạn đã đúng ${correctCount}/${totalCorrectAnswers} mục tiêu (${percentage}%)`;
+          playCelebrationSound();
+          createFireworks();
+        } else {
+          icon.textContent = "💪";
+          title.textContent = "Cố gắng thêm!";
+          message.textContent = `Bạn đã đúng ${correctCount}/${totalCorrectAnswers} mục tiêu (${percentage}%)`;
+          playSound("error");
+        }
+
+        modal.classList.remove("hidden");
+
+        // Automatically show answer colors immediately
+        showAnswerColors();
+
+        // Show action buttons after submission
+        document.getElementById("beforeSubmit").classList.add("hidden");
+        document.getElementById("afterSubmit").classList.remove("hidden");
+      }
+
+      function showResultModal() {
+        const modal = document.getElementById("resultModal");
+        const icon = document.getElementById("resultIcon");
+        const title = document.getElementById("resultTitle");
+        const message = document.getElementById("resultMessage");
+
+        const { correctCount, totalCorrectAnswers } = lastScore;
+        const percentage =
+          totalCorrectAnswers > 0
+            ? Math.round((correctCount / totalCorrectAnswers) * 100)
+            : 0;
+
+        if (percentage >= 90) {
+          icon.textContent = "🏆";
+          title.textContent = "Xuất sắc!";
+          message.textContent = `Bạn đã đúng ${correctCount}/${totalCorrectAnswers} mục tiêu (${percentage}%)`;
+        } else if (percentage >= 70) {
+          icon.textContent = "🎉";
+          title.textContent = "Tốt lắm!";
+          message.textContent = `Bạn đã đúng ${correctCount}/${totalCorrectAnswers} mục tiêu (${percentage}%)`;
+        } else {
+          icon.textContent = "💪";
+          title.textContent = "Cố gắng thêm!";
+          message.textContent = `Bạn đã đúng ${correctCount}/${totalCorrectAnswers} mục tiêu (${percentage}%)`;
+        }
+
+        modal.classList.remove("hidden");
+      }
+
+      function showAnswerColors() {
+        const zones = ["financial", "customer", "internal", "learning"];
+
+        zones.forEach((zoneId) => {
+          const zone = document.getElementById(zoneId);
+          const cards = zone.querySelectorAll(".card-item");
+
+          cards.forEach((card) => {
+            const cardIndex = parseInt(card.dataset.index);
+            const cardData = allCards[cardIndex];
+            const isCorrect = cardData.correct === zoneId;
+
+            if (isCorrect) {
+              card.style.backgroundColor = "#dcfce7";
+              card.style.borderColor = "#16a34a";
+              card.style.borderWidth = "3px";
+            } else {
+              card.style.backgroundColor = "#fee2e2";
+              card.style.borderColor = "#dc2626";
+              card.style.borderWidth = "3px";
+            }
+          });
+        });
+      }
+
+      function showAnswerDetails() {
+        // Just show colors on cards in their CURRENT positions (where user placed them)
+        showAnswerColors();
+        document.getElementById("resultModal").classList.add("hidden");
+      }
+
+      function autoArrangeAnswers() {
+        const zones = ["financial", "customer", "internal", "learning"];
+
+        // Collect all cards from all zones
+        const allPlacedCards = [];
+        zones.forEach((zoneId) => {
+          const zone = document.getElementById(zoneId);
+          const cards = zone.querySelectorAll(".card-item");
+          cards.forEach((card) => allPlacedCards.push(card));
+        });
+
+        // Also collect from card pool
+        const cardPool = document.getElementById("cardPool");
+        const poolCards = cardPool.querySelectorAll(".card-item");
+        poolCards.forEach((card) => allPlacedCards.push(card));
+
+        // Place each card in its correct zone
+        allPlacedCards.forEach((card) => {
+          const cardIndex = parseInt(card.dataset.index);
+          const cardData = allCards[cardIndex];
+
+          // Remove X button since this is system answer, not user choice
+          const removeBtn = card.querySelector(".remove-btn");
+          if (removeBtn) {
+            removeBtn.remove();
+          }
+
+          if (cardData.correct !== "distractor") {
+            const correctZone = document.getElementById(cardData.correct);
+            correctZone.appendChild(card);
+
+            // Set green color for correct placement (system answer, no comparison)
+            card.style.backgroundColor = "#dcfce7";
+            card.style.borderColor = "#16a34a";
+            card.style.borderWidth = "3px";
+          } else {
+            // Move distractors back to card pool
+            cardPool.appendChild(card);
+            card.style.backgroundColor = "";
+            card.style.borderColor = "";
+            card.style.borderWidth = "";
+          }
+        });
+
+        // Close modal
+        document.getElementById("resultModal").classList.add("hidden");
+        playSound("success");
+      }
+
+      function closeModal() {
+        document.getElementById("resultModal").classList.add("hidden");
+        document.querySelectorAll(".card-item").forEach((card) => {
+          card.classList.remove("shake-animation", "success-animation");
+          card.style.backgroundColor = "";
+          card.style.borderColor = "";
+          card.style.borderWidth = "";
+        });
+      }
+
+      function resetGame() {
+        // Reset all state
+        currentResults = [];
+        lastScore = { correctCount: 0, totalCorrectAnswers: 0 };
+        userAnswers = {};
+
+        // Hide modal if open
+        document.getElementById("resultModal").classList.add("hidden");
+
+        // Show submit button, hide action buttons
+        document.getElementById("beforeSubmit").classList.remove("hidden");
+        document.getElementById("afterSubmit").classList.add("hidden");
+
+        // Re-initialize the game (shuffle and reset cards)
+        allCards.sort(() => Math.random() - 0.5);
+
+        // Clear all zones
+        const zones = ["financial", "customer", "internal", "learning"];
+        zones.forEach((zoneId) => {
+          const zone = document.getElementById(zoneId);
+          zone.innerHTML = "";
+        });
+
+        // Re-render cards in pool
+        renderCards();
+
+        playSound("pickup");
+      }
+
+      function playSound(type) {
+        const audioContext = new (window.AudioContext ||
+          window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        if (type === "pickup") {
+          oscillator.frequency.value = 400;
+          gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(
+            0.01,
+            audioContext.currentTime + 0.1
+          );
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.1);
+        } else if (type === "drop") {
+          oscillator.frequency.value = 600;
+          gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(
+            0.01,
+            audioContext.currentTime + 0.15
+          );
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.15);
+        } else if (type === "success") {
+          [523, 659, 784].forEach((freq, i) => {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.2, audioContext.currentTime + i * 0.1);
+            gain.gain.exponentialRampToValueAtTime(
+              0.01,
+              audioContext.currentTime + i * 0.1 + 0.3
+            );
+            osc.start(audioContext.currentTime + i * 0.1);
+            osc.stop(audioContext.currentTime + i * 0.1 + 0.3);
+          });
+        } else if (type === "error") {
+          oscillator.frequency.value = 200;
+          gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(
+            0.01,
+            audioContext.currentTime + 0.3
+          );
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.3);
+        }
+      }
+
+      function playCelebrationSound() {
+        const audioContext = new (window.AudioContext ||
+          window.webkitAudioContext)();
+
+        // Clapping sound effect (multiple noise bursts)
+        for (let i = 0; i < 4; i++) {
+          setTimeout(() => {
+            const bufferSize = audioContext.sampleRate * 0.05;
+            const buffer = audioContext.createBuffer(
+              1,
+              bufferSize,
+              audioContext.sampleRate
+            );
+            const data = buffer.getChannelData(0);
+
+            for (let j = 0; j < bufferSize; j++) {
+              data[j] =
+                (Math.random() * 2 - 1) * Math.exp((-j / bufferSize) * 10);
+            }
+
+            const noise = audioContext.createBufferSource();
+            noise.buffer = buffer;
+
+            const filter = audioContext.createBiquadFilter();
+            filter.type = "bandpass";
+            filter.frequency.value = 1000;
+            filter.Q.value = 5;
+
+            const gain = audioContext.createGain();
+            gain.gain.value = 0.15;
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+
+            noise.start();
+            noise.stop(audioContext.currentTime + 0.05);
+          }, i * 150);
+        }
+
+        // "Yeah!" sound effect (ascending tones)
+        setTimeout(() => {
+          [400, 500, 600, 700].forEach((freq, i) => {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.15, audioContext.currentTime + i * 0.08);
+            gain.gain.exponentialRampToValueAtTime(
+              0.01,
+              audioContext.currentTime + i * 0.08 + 0.2
+            );
+            osc.start(audioContext.currentTime + i * 0.08);
+            osc.stop(audioContext.currentTime + i * 0.08 + 0.2);
+          });
+        }, 600);
+      }
+
+      async function onConfigChange(config) {
+        const gameTitle = document.getElementById("gameTitle");
+        const instructionText = document.getElementById("instructionText");
+        const submitBtn = document.getElementById("submitBtn");
+
+        gameTitle.textContent = config.game_title || defaultConfig.game_title;
+
+        const baseInstruction =
+          config.instruction_text || defaultConfig.instruction_text;
+        instructionText.innerHTML = baseInstruction.includes("→")
+          ? baseInstruction.replace(
+              /(Học hỏi & Phát triển → Quy trình nội bộ → Khách hàng → Tài chính)/,
+              '<span class="font-semibold text-blue-600">$1</span>'
+            )
+          : baseInstruction;
+
+        submitBtn.textContent =
+          config.submit_button_text || defaultConfig.submit_button_text;
+
+        const primaryColor =
+          config.primary_color || defaultConfig.primary_color;
+        const secondaryColor =
+          config.secondary_color || defaultConfig.secondary_color;
+        const bgColor =
+          config.background_color || defaultConfig.background_color;
+
+        document.getElementById(
+          "app"
+        ).style.background = `linear-gradient(to bottom right, ${bgColor}, ${primaryColor}15, ${secondaryColor}15)`;
+        submitBtn.style.background = `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`;
+      }
+
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange,
+          mapToCapabilities: (config) => ({
+            recolorables: [
+              {
+                get: () =>
+                  config.background_color || defaultConfig.background_color,
+                set: (value) => {
+                  config.background_color = value;
+                  window.elementSdk.setConfig({ background_color: value });
+                },
+              },
+              {
+                get: () => config.primary_color || defaultConfig.primary_color,
+                set: (value) => {
+                  config.primary_color = value;
+                  window.elementSdk.setConfig({ primary_color: value });
+                },
+              },
+              {
+                get: () =>
+                  config.secondary_color || defaultConfig.secondary_color,
+                set: (value) => {
+                  config.secondary_color = value;
+                  window.elementSdk.setConfig({ secondary_color: value });
+                },
+              },
+            ],
+            borderables: [],
+            fontEditable: undefined,
+            fontSizeable: undefined,
+          }),
+          mapToEditPanelValues: (config) =>
+            new Map([
+              ["game_title", config.game_title || defaultConfig.game_title],
+              [
+                "instruction_text",
+                config.instruction_text || defaultConfig.instruction_text,
+              ],
+              [
+                "submit_button_text",
+                config.submit_button_text || defaultConfig.submit_button_text,
+              ],
+            ]),
+        });
+      }
+
+      initGame();
+    </script>
+    <script>
+      (function () {
+        function c() {
+          var b = a.contentDocument || a.contentWindow.document;
+          if (b) {
+            var d = b.createElement("script");
+            d.innerHTML =
+              "window.__CF$cv$params={r:'9aff83fe76ecfd67',t:'MTc2NjA2OTg3Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+            b.getElementsByTagName("head")[0].appendChild(d);
+          }
+        }
+        if (document.body) {
+          var a = document.createElement("iframe");
+          a.height = 1;
+          a.width = 1;
+          a.style.position = "absolute";
+          a.style.top = 0;
+          a.style.left = 0;
+          a.style.border = "none";
+          a.style.visibility = "hidden";
+          document.body.appendChild(a);
+          if ("loading" !== document.readyState) c();
+          else if (window.addEventListener)
+            document.addEventListener("DOMContentLoaded", c);
+          else {
+            var e = document.onreadystatechange || function () {};
+            document.onreadystatechange = function (b) {
+              e(b);
+              "loading" !== document.readyState &&
+                ((document.onreadystatechange = e), c());
+            };
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

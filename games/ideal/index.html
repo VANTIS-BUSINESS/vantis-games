@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IDEAL - VANTIS Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --ink: #0d223f;
+        --blue: #2f80ed;
+        --teal: #20c5b5;
+        --green: #078256;
+        --paper: #f7fbff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 12% 10%, rgba(47, 128, 237, 0.14), transparent 30%),
+          radial-gradient(circle at 88% 12%, rgba(32, 197, 181, 0.12), transparent 28%),
+          linear-gradient(180deg, #ffffff 0%, var(--paper) 64%, #eef7fb 100%);
+        color: #102033;
+      }
+
+      .wrap {
+        margin: 0 auto;
+        max-width: 1160px;
+        padding: 0 24px;
+      }
+
+      .logo {
+        height: auto;
+        width: min(220px, 58vw);
+      }
+
+      .letter-card,
+      .drop-zone,
+      .answer-card {
+        box-shadow:
+          0 18px 42px rgba(47, 128, 237, 0.1),
+          0 8px 18px rgba(13, 34, 63, 0.05),
+          inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      }
+
+      .letter-card {
+        touch-action: none;
+        transition:
+          transform 160ms ease,
+          box-shadow 160ms ease,
+          opacity 160ms ease;
+      }
+
+      .letter-card:hover {
+        transform: translateY(-4px) rotateX(8deg);
+        box-shadow:
+          0 24px 54px rgba(47, 128, 237, 0.16),
+          0 10px 24px rgba(13, 34, 63, 0.08);
+      }
+
+      .letter-card.dragging {
+        opacity: 0.55;
+        transform: scale(0.96);
+      }
+
+      .drop-zone {
+        min-height: 112px;
+        transition:
+          border-color 160ms ease,
+          background 160ms ease,
+          transform 160ms ease;
+      }
+
+      .drop-zone.drag-over {
+        border-color: rgba(47, 128, 237, 0.72);
+        background: #f0f8ff;
+        transform: translateY(-3px);
+      }
+
+      .drop-zone.correct {
+        border-color: rgba(22, 163, 74, 0.55);
+        background: #f0fdf4;
+      }
+
+      .drop-zone.wrong {
+        border-color: rgba(220, 38, 38, 0.45);
+        background: #fff5f5;
+      }
+
+      .placed-card {
+        cursor: grab;
+      }
+
+      @media (max-width: 767px) {
+        .wrap {
+          padding: 0 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="min-h-screen">
+      <header class="wrap flex items-center justify-between gap-4 py-6">
+        <a href="../../" aria-label="Về trang chủ">
+          <img src="../../assets/vantis-logo.png" alt="VANTIS" class="logo" />
+        </a>
+        <a
+          href="../../"
+          class="rounded-full border border-slate-200 bg-white/82 px-4 py-2 text-sm font-bold text-slate-600 shadow-sm transition hover:text-[var(--ink)]"
+        >
+          Trang chủ
+        </a>
+      </header>
+
+      <section class="wrap pb-12 pt-2">
+        <div class="mb-6">
+          <p class="text-sm font-black uppercase tracking-[0.18em] text-slate-400">
+            Game IDEAL
+          </p>
+          <h1 class="mt-2 text-3xl font-black leading-tight text-[var(--ink)] md:text-5xl">
+            Ghép đúng mô hình IDEAL
+          </h1>
+        </div>
+
+        <div class="grid gap-6 lg:grid-cols-[0.86fr_1.14fr]">
+          <section class="rounded-3xl border border-blue-100 bg-white/84 p-5">
+            <div class="mb-4 flex items-center justify-between gap-3">
+              <h2 class="text-lg font-black text-[var(--ink)]">Các chữ cái</h2>
+              <button
+                id="resetBtn"
+                class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600 transition hover:text-[var(--ink)]"
+              >
+                Chơi lại
+              </button>
+            </div>
+            <div id="letterPool" class="grid grid-cols-2 gap-3 sm:grid-cols-5 lg:grid-cols-2"></div>
+          </section>
+
+          <section class="grid gap-3">
+            <div id="dropZones" class="grid gap-3"></div>
+            <button
+              id="submitBtn"
+              class="min-h-12 rounded-xl bg-[var(--ink)] px-5 text-base font-black text-white shadow-lg shadow-slate-300 transition hover:bg-slate-900"
+            >
+              Nộp bài
+            </button>
+          </section>
+        </div>
+
+        <section id="answersPanel" class="mt-7 hidden">
+          <div class="mb-4 flex items-center justify-between gap-4">
+            <h2 class="text-2xl font-black text-[var(--ink)]">Đáp án</h2>
+            <p id="scoreText" class="text-sm font-bold text-slate-500"></p>
+          </div>
+          <div id="answersGrid" class="grid gap-4 md:grid-cols-2 xl:grid-cols-5"></div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const idealSteps = [
+        {
+          letter: "I",
+          english: "Identify",
+          vietnamese: "Nhận diện vấn đề",
+          color: "#2f80ed",
+        },
+        {
+          letter: "D",
+          english: "Define",
+          vietnamese: "Xác định nguyên nhân",
+          color: "#425a73",
+        },
+        {
+          letter: "E",
+          english: "Explore",
+          vietnamese: "Khám phá giải pháp",
+          color: "#078256",
+        },
+        {
+          letter: "A",
+          english: "Act",
+          vietnamese: "Thực hiện giải pháp",
+          color: "#425a73",
+        },
+        {
+          letter: "L",
+          english: "Look & Learn",
+          vietnamese: "Quan sát và học hỏi",
+          color: "#2f80ed",
+        },
+      ];
+
+      let draggedCard = null;
+
+      function shuffle(items) {
+        return [...items].sort(() => Math.random() - 0.5);
+      }
+
+      function initGame() {
+        renderLetters();
+        renderDropZones();
+        renderAnswers();
+        document.getElementById("answersPanel").classList.add("hidden");
+      }
+
+      function renderLetters() {
+        const pool = document.getElementById("letterPool");
+        pool.innerHTML = "";
+
+        shuffle(idealSteps).forEach((step) => {
+          pool.appendChild(createLetterCard(step));
+        });
+      }
+
+      function createLetterCard(step) {
+        const card = document.createElement("div");
+        card.className =
+          "letter-card rounded-2xl p-4 text-center text-white placed-card";
+        card.draggable = true;
+        card.dataset.letter = step.letter;
+        card.style.background = `linear-gradient(145deg, ${step.color}, #20c5b5)`;
+        card.innerHTML = `
+          <p class="text-4xl font-black">${step.letter}</p>
+        `;
+        card.addEventListener("dragstart", handleDragStart);
+        card.addEventListener("dragend", handleDragEnd);
+        return card;
+      }
+
+      function renderDropZones() {
+        const zones = document.getElementById("dropZones");
+        zones.innerHTML = "";
+
+        shuffle(idealSteps).forEach((step, index) => {
+          const zone = document.createElement("div");
+          zone.className =
+            "drop-zone rounded-2xl border border-dashed border-blue-200 bg-white/86 p-4";
+          zone.dataset.answer = step.letter;
+          zone.innerHTML = `
+            <div class="flex min-h-[76px] items-center gap-4">
+              <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xl font-black text-slate-300">
+                ${index + 1}
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-lg font-black text-[var(--ink)]">${step.vietnamese}</p>
+              </div>
+              <div class="slot flex min-h-14 min-w-16 items-center justify-center"></div>
+            </div>
+          `;
+          zone.addEventListener("dragover", handleDragOver);
+          zone.addEventListener("dragenter", handleDragEnter);
+          zone.addEventListener("dragleave", handleDragLeave);
+          zone.addEventListener("drop", handleDrop);
+          zones.appendChild(zone);
+        });
+      }
+
+      function renderAnswers() {
+        const grid = document.getElementById("answersGrid");
+        grid.innerHTML = idealSteps
+          .map(
+            (step) => `
+              <article class="answer-card rounded-2xl border border-blue-100 bg-white p-4">
+                <div
+                  class="mb-4 grid h-14 w-14 place-items-center rounded-xl text-2xl font-black text-white"
+                  style="background: ${step.color};"
+                >
+                  ${step.letter}
+                </div>
+                <p class="text-lg font-black text-[var(--ink)]">${step.english}</p>
+                <p class="mt-1 text-sm font-bold text-slate-600">${step.vietnamese}</p>
+              </article>
+            `
+          )
+          .join("");
+      }
+
+      function handleDragStart(event) {
+        draggedCard = event.currentTarget;
+        draggedCard.classList.add("dragging");
+      }
+
+      function handleDragEnd() {
+        if (draggedCard) {
+          draggedCard.classList.remove("dragging");
+        }
+        draggedCard = null;
+      }
+
+      function handleDragOver(event) {
+        event.preventDefault();
+      }
+
+      function handleDragEnter(event) {
+        const zone = event.currentTarget;
+        zone.classList.add("drag-over");
+      }
+
+      function handleDragLeave(event) {
+        event.currentTarget.classList.remove("drag-over");
+      }
+
+      function handleDrop(event) {
+        event.preventDefault();
+        const zone = event.currentTarget;
+        const slot = zone.querySelector(".slot");
+        const pool = document.getElementById("letterPool");
+
+        zone.classList.remove("drag-over", "correct", "wrong");
+
+        if (!draggedCard) return;
+
+        const existing = slot.querySelector(".letter-card");
+        if (existing) {
+          existing.classList.remove("w-16");
+          pool.appendChild(existing);
+        }
+
+        draggedCard.classList.add("w-16");
+        slot.appendChild(draggedCard);
+      }
+
+      function submitAnswers() {
+        let correct = 0;
+
+        document.querySelectorAll(".drop-zone").forEach((zone) => {
+          const placed = zone.querySelector(".letter-card");
+          zone.classList.remove("correct", "wrong");
+
+          if (placed && placed.dataset.letter === zone.dataset.answer) {
+            correct++;
+            zone.classList.add("correct");
+          } else {
+            zone.classList.add("wrong");
+          }
+        });
+
+        document.getElementById("scoreText").textContent = `${correct}/${idealSteps.length} câu đúng`;
+        document.getElementById("answersPanel").classList.remove("hidden");
+        document.getElementById("answersPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      document.getElementById("submitBtn").addEventListener("click", submitAnswers);
+      document.getElementById("resetBtn").addEventListener("click", initGame);
+
+      initGame();
+    </script>
+  </body>
+</html>

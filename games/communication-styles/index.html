@@ -90,6 +90,13 @@
         color: var(--ink);
       }
 
+      .inline-answer {
+        border: 1px solid rgba(47, 128, 237, 0.16);
+        box-shadow:
+          0 14px 32px rgba(47, 128, 237, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.96);
+      }
+
       .quiz-card.correct {
         border-color: rgba(22, 163, 74, 0.52);
         background: #f8fff9;
@@ -138,28 +145,23 @@
 
         <div id="quizGrid" class="grid gap-5 lg:grid-cols-2"></div>
 
-        <div class="mt-6 flex flex-wrap gap-3">
-          <button
-            id="submitBtn"
-            class="min-h-12 rounded-xl bg-[var(--ink)] px-6 text-base font-black text-white shadow-lg shadow-slate-300 transition hover:bg-slate-900"
-          >
-            Nộp bài
-          </button>
-          <button
-            id="resetBtn"
-            class="min-h-12 rounded-xl border border-slate-200 bg-white px-6 text-base font-black text-slate-600 shadow-sm transition hover:text-[var(--ink)]"
-          >
-            Chơi lại
-          </button>
-        </div>
-
-        <section id="answersPanel" class="mt-8 hidden">
-          <div class="mb-4 flex items-center justify-between gap-4">
-            <h2 class="text-2xl font-black text-[var(--ink)]">Đáp án</h2>
-            <p id="scoreText" class="text-sm font-bold text-slate-500"></p>
+        <div class="mt-6 rounded-2xl border border-blue-100 bg-white/78 p-3">
+          <div class="flex flex-wrap items-center justify-center gap-3">
+            <button
+              id="submitBtn"
+              class="min-h-12 rounded-xl bg-[var(--ink)] px-8 text-base font-black text-white shadow-lg shadow-slate-300 transition hover:bg-slate-900"
+            >
+              Nộp bài
+            </button>
+            <button
+              id="resetBtn"
+              class="min-h-12 rounded-xl border border-slate-200 bg-white px-6 text-base font-black text-slate-600 shadow-sm transition hover:text-[var(--ink)]"
+            >
+              Chơi lại
+            </button>
+            <p id="scoreText" class="hidden text-sm font-black text-slate-600"></p>
           </div>
-          <div id="answersGrid" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
-        </section>
+        </div>
       </section>
     </main>
 
@@ -167,7 +169,7 @@
       const styles = [
         {
           id: "expressiveness",
-          label: "Biểu cảm mạnh",
+          label: "Thể hiện",
           english: "Expressiveness",
           strength: "Sôi nổi, truyền cảm hứng, dễ kết nối.",
           weakness: "Dễ nói nhiều, lấn át hoặc thiếu lắng nghe.",
@@ -183,7 +185,7 @@
         },
         {
           id: "verbal-aggressiveness",
-          label: "Quyết liệt lời nói",
+          label: "Hung hăng ngôn từ",
           english: "Verbal Aggressiveness",
           strength: "Quyết đoán, bảo vệ quan điểm mạnh trong tình huống khẩn cấp.",
           weakness: "Dễ gây mâu thuẫn hoặc tạo cảm giác căng thẳng.",
@@ -191,7 +193,7 @@
         },
         {
           id: "questioningness",
-          label: "Hay đặt câu hỏi",
+          label: "Hỏi nhiều",
           english: "Questioningness",
           strength: "Đào sâu vấn đề, mở ra góc nhìn mới.",
           weakness: "Dễ bị xem là soi mói hoặc làm chậm thảo luận.",
@@ -199,7 +201,7 @@
         },
         {
           id: "emotionality",
-          label: "Giàu cảm xúc",
+          label: "Cảm xúc",
           english: "Emotionality",
           strength: "Thấu cảm, chân thành, dễ tạo niềm tin.",
           weakness: "Dễ bị cảm xúc chi phối khi gặp áp lực.",
@@ -207,7 +209,7 @@
         },
         {
           id: "impression-manipulativeness",
-          label: "Tạo ấn tượng",
+          label: "Kiểm soát ấn tượng",
           english: "Impression Manipulativeness",
           strength: "Thuyết phục tốt, ngoại giao khéo léo.",
           weakness: "Dễ bị đánh giá là thiếu chân thành nếu quá tính toán.",
@@ -231,7 +233,7 @@
           button.addEventListener("click", selectOption);
         });
 
-        document.getElementById("answersPanel").classList.add("hidden");
+        document.getElementById("scoreText").classList.add("hidden");
       }
 
       function createQuestionCard(style, index) {
@@ -270,6 +272,7 @@
               </div>
             </div>
             <div class="mt-4 grid gap-2 sm:grid-cols-2">${options}</div>
+            <div class="inline-answer mt-4 hidden rounded-2xl bg-white p-4"></div>
           </article>
         `;
       }
@@ -293,6 +296,7 @@
         activeQuestions.forEach((style) => {
           const card = document.getElementById(style.id);
           const selected = answers.get(style.id);
+          const inlineAnswer = card.querySelector(".inline-answer");
           card.classList.remove("correct", "wrong");
 
           if (selected === style.id) {
@@ -301,30 +305,20 @@
           } else {
             card.classList.add("wrong");
           }
+
+          inlineAnswer.classList.remove("hidden");
+          inlineAnswer.innerHTML = `
+            <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Đáp án</p>
+            <p class="mt-2 text-lg font-black text-[var(--ink)]">${style.label}</p>
+            <p class="mt-1 text-sm font-black text-slate-500">${style.english}</p>
+            <p class="mt-3 text-sm leading-6 text-slate-600"><span class="font-black text-green-700">Điểm mạnh:</span> ${style.strength}</p>
+            <p class="mt-2 text-sm leading-6 text-slate-600"><span class="font-black text-rose-700">Điểm yếu:</span> ${style.weakness}</p>
+          `;
         });
 
-        renderAnswers(score);
-        document.getElementById("answersPanel").classList.remove("hidden");
-        document.getElementById("answersPanel").scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-
-      function renderAnswers(score) {
-        const grid = document.getElementById("answersGrid");
-        document.getElementById("scoreText").textContent = `${score}/${activeQuestions.length} câu đúng`;
-
-        grid.innerHTML = activeQuestions
-          .map(
-            (style) => `
-              <article class="answer-card rounded-2xl border border-blue-100 bg-white p-4">
-                <div class="face face-avatar answer-face mb-4" style="background-position: ${style.position};"></div>
-                <p class="text-lg font-black text-[var(--ink)]">${style.label}</p>
-                <p class="mt-1 text-sm font-black text-slate-500">${style.english}</p>
-                <p class="mt-3 text-sm leading-6 text-slate-600"><span class="font-black text-green-700">Điểm mạnh:</span> ${style.strength}</p>
-                <p class="mt-2 text-sm leading-6 text-slate-600"><span class="font-black text-rose-700">Điểm yếu:</span> ${style.weakness}</p>
-              </article>
-            `
-          )
-          .join("");
+        const scoreText = document.getElementById("scoreText");
+        scoreText.textContent = `${score}/${activeQuestions.length} câu đúng`;
+        scoreText.classList.remove("hidden");
       }
 
       function resetQuiz() {

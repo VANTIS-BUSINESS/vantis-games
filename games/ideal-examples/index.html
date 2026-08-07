@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IDEAL qua ví dụ - VANTIS Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --ink: #0d223f;
+        --blue: #2f80ed;
+        --teal: #20c5b5;
+        --green: #078256;
+        --sun: #f4b740;
+        --paper: #f7fbff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 12% 10%, rgba(47, 128, 237, 0.14), transparent 30%),
+          radial-gradient(circle at 86% 8%, rgba(32, 197, 181, 0.12), transparent 28%),
+          linear-gradient(180deg, #ffffff 0%, var(--paper) 64%, #eef7fb 100%);
+        color: #102033;
+      }
+
+      .wrap {
+        margin: 0 auto;
+        max-width: 1180px;
+        padding: 0 24px;
+      }
+
+      .logo {
+        height: auto;
+        width: min(220px, 58vw);
+      }
+
+      .quiz-card,
+      .answer-card {
+        box-shadow:
+          0 18px 42px rgba(47, 128, 237, 0.1),
+          0 8px 18px rgba(13, 34, 63, 0.05),
+          inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      }
+
+      .quiz-card {
+        transition:
+          transform 160ms ease,
+          border-color 160ms ease,
+          box-shadow 160ms ease;
+      }
+
+      .quiz-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(47, 128, 237, 0.3);
+        box-shadow:
+          0 24px 54px rgba(47, 128, 237, 0.14),
+          0 10px 24px rgba(13, 34, 63, 0.07);
+      }
+
+      .visual {
+        position: relative;
+        min-height: 150px;
+        overflow: hidden;
+        border-radius: 22px;
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.72), transparent 52%),
+          linear-gradient(145deg, #eef7ff, #ffffff);
+      }
+
+      .visual::after {
+        content: "";
+        position: absolute;
+        inset: auto 24px 18px 24px;
+        height: 16px;
+        border-radius: 999px;
+        background: rgba(13, 34, 63, 0.1);
+        filter: blur(12px);
+      }
+
+      .scene-piece {
+        position: absolute;
+        transform-style: preserve-3d;
+      }
+
+      .scene-identify .lens {
+        left: 42%;
+        top: 36px;
+        height: 64px;
+        width: 64px;
+        border: 10px solid var(--blue);
+        border-radius: 999px;
+        box-shadow: 0 16px 28px rgba(47, 128, 237, 0.2);
+      }
+
+      .scene-identify .handle {
+        left: 58%;
+        top: 96px;
+        height: 12px;
+        width: 58px;
+        border-radius: 999px;
+        background: var(--ink);
+        transform: rotate(42deg);
+      }
+
+      .scene-define .root {
+        left: 50%;
+        top: 26px;
+        height: 92px;
+        width: 92px;
+        border-radius: 24px 24px 52px 52px;
+        background: linear-gradient(145deg, #465f79, var(--ink));
+        transform: translateX(-50%) rotate(45deg);
+      }
+
+      .scene-define .line {
+        left: 50%;
+        top: 84px;
+        height: 56px;
+        width: 8px;
+        border-radius: 999px;
+        background: var(--teal);
+        transform-origin: top center;
+      }
+
+      .scene-define .line.one {
+        transform: rotate(28deg);
+      }
+
+      .scene-define .line.two {
+        transform: rotate(-28deg);
+      }
+
+      .scene-explore .path {
+        bottom: 22px;
+        height: 16px;
+        width: 38%;
+        border-radius: 999px;
+        background: var(--teal);
+      }
+
+      .scene-explore .path.one {
+        left: 12%;
+        transform: rotate(-18deg);
+      }
+
+      .scene-explore .path.two {
+        left: 36%;
+        transform: rotate(14deg);
+      }
+
+      .scene-explore .path.three {
+        left: 58%;
+        background: var(--sun);
+        transform: rotate(-10deg);
+      }
+
+      .scene-act .block {
+        left: 50%;
+        top: 34px;
+        height: 76px;
+        width: 112px;
+        border-radius: 18px;
+        background: linear-gradient(145deg, var(--blue), var(--teal));
+        box-shadow: 0 20px 32px rgba(47, 128, 237, 0.2);
+        transform: translateX(-50%) rotateX(14deg);
+      }
+
+      .scene-act .bolt {
+        left: 50%;
+        top: 44px;
+        height: 54px;
+        width: 22px;
+        background: #ffffff;
+        clip-path: polygon(48% 0, 100% 0, 62% 42%, 100% 42%, 32% 100%, 46% 56%, 0 56%);
+        transform: translateX(-50%);
+      }
+
+      .scene-learn .mirror {
+        left: 50%;
+        top: 22px;
+        height: 92px;
+        width: 92px;
+        border-radius: 999px;
+        border: 10px solid var(--blue);
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(32, 197, 181, 0.16));
+        transform: translateX(-50%);
+      }
+
+      .scene-learn .base {
+        left: 50%;
+        top: 112px;
+        height: 14px;
+        width: 78px;
+        border-radius: 999px;
+        background: var(--ink);
+        transform: translateX(-50%);
+      }
+
+      .option-btn {
+        transition:
+          transform 140ms ease,
+          border-color 140ms ease,
+          background 140ms ease;
+      }
+
+      .option-btn:hover {
+        transform: translateY(-2px);
+      }
+
+      .option-btn.selected {
+        border-color: rgba(47, 128, 237, 0.62);
+        background: #eff7ff;
+        color: var(--ink);
+      }
+
+      .quiz-card.correct {
+        border-color: rgba(22, 163, 74, 0.52);
+        background: #f8fff9;
+      }
+
+      .quiz-card.wrong {
+        border-color: rgba(220, 38, 38, 0.38);
+        background: #fffafa;
+      }
+
+      @media (max-width: 767px) {
+        .wrap {
+          padding: 0 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="min-h-screen">
+      <header class="wrap flex items-center justify-between gap-4 py-6">
+        <a href="../../" aria-label="Về trang chủ">
+          <img src="../../assets/vantis-logo.png" alt="VANTIS" class="logo" />
+        </a>
+        <a
+          href="../../"
+          class="rounded-full border border-slate-200 bg-white/82 px-4 py-2 text-sm font-bold text-slate-600 shadow-sm transition hover:text-[var(--ink)]"
+        >
+          Trang chủ
+        </a>
+      </header>
+
+      <section class="wrap pb-12 pt-2">
+        <div class="mb-6">
+          <p class="text-sm font-black uppercase tracking-[0.18em] text-slate-400">
+            IDEAL qua ví dụ
+          </p>
+          <h1 class="mt-2 text-3xl font-black leading-tight text-[var(--ink)] md:text-5xl">
+            Đoán bước IDEAL
+          </h1>
+        </div>
+
+        <div id="quizGrid" class="grid gap-5 lg:grid-cols-2"></div>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button
+            id="submitBtn"
+            class="min-h-12 rounded-xl bg-[var(--ink)] px-6 text-base font-black text-white shadow-lg shadow-slate-300 transition hover:bg-slate-900"
+          >
+            Nộp bài
+          </button>
+          <button
+            id="resetBtn"
+            class="min-h-12 rounded-xl border border-slate-200 bg-white px-6 text-base font-black text-slate-600 shadow-sm transition hover:text-[var(--ink)]"
+          >
+            Chơi lại
+          </button>
+        </div>
+
+        <section id="answersPanel" class="mt-8 hidden">
+          <div class="mb-4 flex items-center justify-between gap-4">
+            <h2 class="text-2xl font-black text-[var(--ink)]">Đáp án</h2>
+            <p id="scoreText" class="text-sm font-bold text-slate-500"></p>
+          </div>
+          <div id="answersGrid" class="grid gap-4 md:grid-cols-2 xl:grid-cols-5"></div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const options = [
+        { letter: "I", english: "Identify", vietnamese: "Nhận diện vấn đề" },
+        { letter: "D", english: "Define", vietnamese: "Xác định nguyên nhân" },
+        { letter: "E", english: "Explore", vietnamese: "Khám phá giải pháp" },
+        { letter: "A", english: "Act", vietnamese: "Thực hiện giải pháp" },
+        { letter: "L", english: "Look & Learn", vietnamese: "Quan sát và học hỏi" },
+      ];
+
+      const questions = [
+        {
+          id: "q1",
+          answer: "I",
+          type: "Hình ảnh",
+          clue: "Kính lúp đang soi ra điểm bất thường",
+          detail: "Nhận ra có một vấn đề cần xử lý trước đã.",
+          scene: "scene-identify",
+        },
+        {
+          id: "q2",
+          answer: "D",
+          type: "Từ khóa",
+          clue: "Đào tới gốc rễ",
+          detail: "Tìm nguyên nhân thật sự, không dừng ở biểu hiện bên ngoài.",
+          scene: "scene-define",
+        },
+        {
+          id: "q3",
+          answer: "E",
+          type: "Hình ảnh",
+          clue: "Nhiều con đường khác nhau",
+          detail: "Mở ra vài hướng xử lý trước khi chọn cách làm.",
+          scene: "scene-explore",
+        },
+        {
+          id: "q4",
+          answer: "A",
+          type: "Tình huống",
+          clue: "Bắt tay làm ngay",
+          detail: "Chọn giải pháp rồi triển khai bằng hành động cụ thể.",
+          scene: "scene-act",
+        },
+        {
+          id: "q5",
+          answer: "L",
+          type: "Thành ngữ",
+          clue: "Rút kinh nghiệm",
+          detail: "Nhìn lại việc đã làm để học cho lần sau.",
+          scene: "scene-learn",
+        },
+      ];
+
+      const answers = new Map();
+
+      function renderQuiz() {
+        const grid = document.getElementById("quizGrid");
+        grid.innerHTML = questions.map(createQuestionCard).join("");
+        document.querySelectorAll(".option-btn").forEach((button) => {
+          button.addEventListener("click", selectOption);
+        });
+        document.getElementById("answersPanel").classList.add("hidden");
+      }
+
+      function createQuestionCard(question, index) {
+        const optionButtons = options
+          .map(
+            (option) => `
+              <button
+                class="option-btn rounded-xl border border-slate-200 bg-white px-4 py-3 text-left font-black text-slate-500"
+                type="button"
+                data-question="${question.id}"
+                data-answer="${option.letter}"
+              >
+                <span class="text-xl">${option.letter}</span>
+                <span class="ml-2 text-sm">${option.vietnamese}</span>
+              </button>
+            `
+          )
+          .join("");
+
+        return `
+          <article id="${question.id}" class="quiz-card rounded-3xl border border-blue-100 bg-white/88 p-5">
+            <div class="visual ${question.scene} mb-5">
+              ${createScene(question.scene)}
+            </div>
+            <div class="mb-4">
+              <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">${question.type} ${index + 1}</p>
+              <h2 class="mt-2 text-2xl font-black text-[var(--ink)]">${question.clue}</h2>
+              <p class="mt-2 text-sm leading-6 text-slate-600">${question.detail}</p>
+            </div>
+            <div class="grid gap-2 sm:grid-cols-2">${optionButtons}</div>
+          </article>
+        `;
+      }
+
+      function createScene(scene) {
+        const scenes = {
+          "scene-identify": `
+            <div class="scene-piece lens"></div>
+            <div class="scene-piece handle"></div>
+          `,
+          "scene-define": `
+            <div class="scene-piece root"></div>
+            <div class="scene-piece line one"></div>
+            <div class="scene-piece line two"></div>
+          `,
+          "scene-explore": `
+            <div class="scene-piece path one"></div>
+            <div class="scene-piece path two"></div>
+            <div class="scene-piece path three"></div>
+          `,
+          "scene-act": `
+            <div class="scene-piece block"></div>
+            <div class="scene-piece bolt"></div>
+          `,
+          "scene-learn": `
+            <div class="scene-piece mirror"></div>
+            <div class="scene-piece base"></div>
+          `,
+        };
+        return scenes[scene];
+      }
+
+      function selectOption(event) {
+        const button = event.currentTarget;
+        const questionId = button.dataset.question;
+
+        answers.set(questionId, button.dataset.answer);
+
+        document
+          .querySelectorAll(`[data-question="${questionId}"]`)
+          .forEach((item) => item.classList.remove("selected"));
+
+        button.classList.add("selected");
+      }
+
+      function submitQuiz() {
+        let score = 0;
+
+        questions.forEach((question) => {
+          const card = document.getElementById(question.id);
+          const selected = answers.get(question.id);
+          card.classList.remove("correct", "wrong");
+
+          if (selected === question.answer) {
+            score++;
+            card.classList.add("correct");
+          } else {
+            card.classList.add("wrong");
+          }
+        });
+
+        renderAnswers(score);
+        document.getElementById("answersPanel").classList.remove("hidden");
+        document.getElementById("answersPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function renderAnswers(score) {
+        const grid = document.getElementById("answersGrid");
+        document.getElementById("scoreText").textContent = `${score}/${questions.length} câu đúng`;
+
+        grid.innerHTML = questions
+          .map((question) => {
+            const step = options.find((item) => item.letter === question.answer);
+            return `
+              <article class="answer-card rounded-2xl border border-blue-100 bg-white p-4">
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-400">${question.clue}</p>
+                <div class="mt-4 grid h-14 w-14 place-items-center rounded-xl bg-[var(--ink)] text-2xl font-black text-white">
+                  ${step.letter}
+                </div>
+                <p class="mt-4 text-lg font-black text-[var(--ink)]">${step.english}</p>
+                <p class="mt-1 text-sm font-bold text-slate-600">${step.vietnamese}</p>
+              </article>
+            `;
+          })
+          .join("");
+      }
+
+      function resetQuiz() {
+        answers.clear();
+        renderQuiz();
+      }
+
+      document.getElementById("submitBtn").addEventListener("click", submitQuiz);
+      document.getElementById("resetBtn").addEventListener("click", resetQuiz);
+
+      renderQuiz();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phong cách giao tiếp - VANTIS Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --ink: #0d223f;
+        --blue: #2f80ed;
+        --teal: #20c5b5;
+        --purple: #6b45a8;
+        --paper: #f7fbff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 12% 10%, rgba(47, 128, 237, 0.14), transparent 30%),
+          radial-gradient(circle at 88% 12%, rgba(107, 69, 168, 0.12), transparent 28%),
+          linear-gradient(180deg, #ffffff 0%, var(--paper) 64%, #eef7fb 100%);
+        color: #102033;
+      }
+
+      .wrap {
+        margin: 0 auto;
+        max-width: 1180px;
+        padding: 0 24px;
+      }
+
+      .logo {
+        height: auto;
+        width: min(220px, 58vw);
+      }
+
+      .quiz-card,
+      .answer-card {
+        box-shadow:
+          0 18px 42px rgba(47, 128, 237, 0.1),
+          0 8px 18px rgba(13, 34, 63, 0.05),
+          inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      }
+
+      .face {
+        aspect-ratio: 1 / 1;
+        border-radius: 26px;
+        background-image: url("../../assets/communication-style-faces.png");
+        background-repeat: no-repeat;
+        background-size: 300% 200%;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      }
+
+      .face-avatar {
+        height: 168px;
+        width: 168px;
+        flex: 0 0 auto;
+        border: 8px solid rgba(255, 255, 255, 0.92);
+        border-radius: 999px;
+        box-shadow:
+          0 18px 38px rgba(13, 34, 63, 0.12),
+          0 0 0 1px rgba(47, 128, 237, 0.12);
+      }
+
+      .answer-face {
+        height: 132px;
+        width: 132px;
+        border-width: 6px;
+      }
+
+      .option-btn {
+        transition:
+          transform 140ms ease,
+          border-color 140ms ease,
+          background 140ms ease;
+      }
+
+      .option-btn:hover {
+        transform: translateY(-2px);
+      }
+
+      .option-btn.selected {
+        border-color: rgba(47, 128, 237, 0.62);
+        background: #eff7ff;
+        color: var(--ink);
+      }
+
+      .quiz-card.correct {
+        border-color: rgba(22, 163, 74, 0.52);
+        background: #f8fff9;
+      }
+
+      .quiz-card.wrong {
+        border-color: rgba(220, 38, 38, 0.38);
+        background: #fffafa;
+      }
+
+      @media (max-width: 767px) {
+        .wrap {
+          padding: 0 16px;
+        }
+
+        .face-avatar {
+          height: 132px;
+          width: 132px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="min-h-screen">
+      <header class="wrap flex items-center justify-between gap-4 py-6">
+        <a href="../../" aria-label="Về trang chủ">
+          <img src="../../assets/vantis-logo.png" alt="VANTIS" class="logo" />
+        </a>
+        <a
+          href="../../"
+          class="rounded-full border border-slate-200 bg-white/82 px-4 py-2 text-sm font-bold text-slate-600 shadow-sm transition hover:text-[var(--ink)]"
+        >
+          Trang chủ
+        </a>
+      </header>
+
+      <section class="wrap pb-12 pt-2">
+        <div class="mb-6">
+          <p class="text-sm font-black uppercase tracking-[0.18em] text-slate-400">
+            Phong cách giao tiếp
+          </p>
+          <h1 class="mt-2 text-3xl font-black leading-tight text-[var(--ink)] md:text-5xl">
+            Đoán phong cách qua gợi ý
+          </h1>
+        </div>
+
+        <div id="quizGrid" class="grid gap-5 lg:grid-cols-2"></div>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button
+            id="submitBtn"
+            class="min-h-12 rounded-xl bg-[var(--ink)] px-6 text-base font-black text-white shadow-lg shadow-slate-300 transition hover:bg-slate-900"
+          >
+            Nộp bài
+          </button>
+          <button
+            id="resetBtn"
+            class="min-h-12 rounded-xl border border-slate-200 bg-white px-6 text-base font-black text-slate-600 shadow-sm transition hover:text-[var(--ink)]"
+          >
+            Chơi lại
+          </button>
+        </div>
+
+        <section id="answersPanel" class="mt-8 hidden">
+          <div class="mb-4 flex items-center justify-between gap-4">
+            <h2 class="text-2xl font-black text-[var(--ink)]">Đáp án</h2>
+            <p id="scoreText" class="text-sm font-bold text-slate-500"></p>
+          </div>
+          <div id="answersGrid" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const styles = [
+        {
+          id: "expressiveness",
+          label: "Biểu cảm mạnh",
+          english: "Expressiveness",
+          strength: "Sôi nổi, truyền cảm hứng, dễ kết nối.",
+          weakness: "Dễ nói nhiều, lấn át hoặc thiếu lắng nghe.",
+          position: "0% 0%",
+        },
+        {
+          id: "preciseness",
+          label: "Chính xác",
+          english: "Preciseness",
+          strength: "Rõ ràng, đáng tin cậy, làm việc có hệ thống.",
+          weakness: "Dễ bị xem là khô khan hoặc quá cứng nhắc.",
+          position: "50% 0%",
+        },
+        {
+          id: "verbal-aggressiveness",
+          label: "Quyết liệt lời nói",
+          english: "Verbal Aggressiveness",
+          strength: "Quyết đoán, bảo vệ quan điểm mạnh trong tình huống khẩn cấp.",
+          weakness: "Dễ gây mâu thuẫn hoặc tạo cảm giác căng thẳng.",
+          position: "100% 0%",
+        },
+        {
+          id: "questioningness",
+          label: "Hay đặt câu hỏi",
+          english: "Questioningness",
+          strength: "Đào sâu vấn đề, mở ra góc nhìn mới.",
+          weakness: "Dễ bị xem là soi mói hoặc làm chậm thảo luận.",
+          position: "0% 100%",
+        },
+        {
+          id: "emotionality",
+          label: "Giàu cảm xúc",
+          english: "Emotionality",
+          strength: "Thấu cảm, chân thành, dễ tạo niềm tin.",
+          weakness: "Dễ bị cảm xúc chi phối khi gặp áp lực.",
+          position: "50% 100%",
+        },
+        {
+          id: "impression-manipulativeness",
+          label: "Tạo ấn tượng",
+          english: "Impression Manipulativeness",
+          strength: "Thuyết phục tốt, ngoại giao khéo léo.",
+          weakness: "Dễ bị đánh giá là thiếu chân thành nếu quá tính toán.",
+          position: "100% 100%",
+        },
+      ];
+
+      let activeQuestions = [];
+      const answers = new Map();
+
+      function shuffle(items) {
+        return [...items].sort(() => Math.random() - 0.5);
+      }
+
+      function renderQuiz() {
+        const grid = document.getElementById("quizGrid");
+        activeQuestions = shuffle(styles);
+        grid.innerHTML = activeQuestions.map(createQuestionCard).join("");
+
+        document.querySelectorAll(".option-btn").forEach((button) => {
+          button.addEventListener("click", selectOption);
+        });
+
+        document.getElementById("answersPanel").classList.add("hidden");
+      }
+
+      function createQuestionCard(style, index) {
+        const options = shuffle(styles)
+          .map(
+            (item) => `
+              <button
+                class="option-btn rounded-xl border border-slate-200 bg-white px-4 py-3 text-left font-black text-slate-500"
+                type="button"
+                data-question="${style.id}"
+                data-answer="${item.id}"
+              >
+                ${item.label}
+              </button>
+            `
+          )
+          .join("");
+
+        return `
+          <article id="${style.id}" class="quiz-card rounded-3xl border border-blue-100 bg-white/88 p-5">
+            <div class="mb-5 flex flex-col gap-5 sm:flex-row sm:items-center">
+              <div class="face face-avatar" style="background-position: ${style.position};"></div>
+              <div class="min-w-0">
+                <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Gợi ý ${index + 1}</p>
+                <p class="mt-2 text-xl font-black leading-tight text-[var(--ink)]">Đoán phong cách phù hợp</p>
+              </div>
+            </div>
+            <div class="grid gap-3 md:grid-cols-2">
+              <div class="rounded-2xl bg-green-50 p-4">
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-green-700">Điểm mạnh</p>
+                <p class="mt-2 text-sm font-bold leading-6 text-slate-700">${style.strength}</p>
+              </div>
+              <div class="rounded-2xl bg-rose-50 p-4">
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-rose-700">Điểm yếu</p>
+                <p class="mt-2 text-sm font-bold leading-6 text-slate-700">${style.weakness}</p>
+              </div>
+            </div>
+            <div class="mt-4 grid gap-2 sm:grid-cols-2">${options}</div>
+          </article>
+        `;
+      }
+
+      function selectOption(event) {
+        const button = event.currentTarget;
+        const questionId = button.dataset.question;
+
+        answers.set(questionId, button.dataset.answer);
+
+        document
+          .querySelectorAll(`[data-question="${questionId}"]`)
+          .forEach((item) => item.classList.remove("selected"));
+
+        button.classList.add("selected");
+      }
+
+      function submitQuiz() {
+        let score = 0;
+
+        activeQuestions.forEach((style) => {
+          const card = document.getElementById(style.id);
+          const selected = answers.get(style.id);
+          card.classList.remove("correct", "wrong");
+
+          if (selected === style.id) {
+            score++;
+            card.classList.add("correct");
+          } else {
+            card.classList.add("wrong");
+          }
+        });
+
+        renderAnswers(score);
+        document.getElementById("answersPanel").classList.remove("hidden");
+        document.getElementById("answersPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function renderAnswers(score) {
+        const grid = document.getElementById("answersGrid");
+        document.getElementById("scoreText").textContent = `${score}/${activeQuestions.length} câu đúng`;
+
+        grid.innerHTML = activeQuestions
+          .map(
+            (style) => `
+              <article class="answer-card rounded-2xl border border-blue-100 bg-white p-4">
+                <div class="face face-avatar answer-face mb-4" style="background-position: ${style.position};"></div>
+                <p class="text-lg font-black text-[var(--ink)]">${style.label}</p>
+                <p class="mt-1 text-sm font-black text-slate-500">${style.english}</p>
+                <p class="mt-3 text-sm leading-6 text-slate-600"><span class="font-black text-green-700">Điểm mạnh:</span> ${style.strength}</p>
+                <p class="mt-2 text-sm leading-6 text-slate-600"><span class="font-black text-rose-700">Điểm yếu:</span> ${style.weakness}</p>
+              </article>
+            `
+          )
+          .join("");
+      }
+
+      function resetQuiz() {
+        answers.clear();
+        renderQuiz();
+      }
+
+      document.getElementById("submitBtn").addEventListener("click", submitQuiz);
+      document.getElementById("resetBtn").addEventListener("click", resetQuiz);
+
+      renderQuiz();
+    </script>
+  </body>
+</html>

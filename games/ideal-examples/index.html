@@ -340,10 +340,16 @@
       ];
 
       const answers = new Map();
+      let activeQuestions = [];
+
+      function shuffle(items) {
+        return [...items].sort(() => Math.random() - 0.5);
+      }
 
       function renderQuiz() {
         const grid = document.getElementById("quizGrid");
-        grid.innerHTML = questions.map(createQuestionCard).join("");
+        activeQuestions = shuffle(questions);
+        grid.innerHTML = activeQuestions.map(createQuestionCard).join("");
         document.querySelectorAll(".option-btn").forEach((button) => {
           button.addEventListener("click", selectOption);
         });
@@ -351,7 +357,7 @@
       }
 
       function createQuestionCard(question, index) {
-        const optionButtons = options
+        const optionButtons = shuffle(options)
           .map(
             (option) => `
               <button
@@ -426,7 +432,7 @@
       function submitQuiz() {
         let score = 0;
 
-        questions.forEach((question) => {
+        activeQuestions.forEach((question) => {
           const card = document.getElementById(question.id);
           const selected = answers.get(question.id);
           card.classList.remove("correct", "wrong");
@@ -446,9 +452,9 @@
 
       function renderAnswers(score) {
         const grid = document.getElementById("answersGrid");
-        document.getElementById("scoreText").textContent = `${score}/${questions.length} câu đúng`;
+        document.getElementById("scoreText").textContent = `${score}/${activeQuestions.length} câu đúng`;
 
-        grid.innerHTML = questions
+        grid.innerHTML = activeQuestions
           .map((question) => {
             const step = options.find((item) => item.letter === question.answer);
             return `

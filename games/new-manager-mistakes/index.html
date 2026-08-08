@@ -209,9 +209,9 @@
       const mistakes = [
         {
           id: "delegate",
-          prefix: "",
+          prefix: "Không",
           suffix: "",
-          answer: "Không giao việc",
+          answer: "giao việc",
           english: "Not Delegating Tasks",
           image: "../../assets/SaiLam_1.png",
         },
@@ -348,7 +348,7 @@
                     data-answer="${mistake.id}"
                   >
                     <span class="drop-content flex min-h-6 items-center justify-center text-center text-xs font-black uppercase tracking-[0.12em] text-slate-400">
-                      Thả vào đây
+                      ...
                     </span>
                   </div>
                   <p class="mt-2 text-center text-base font-black leading-tight text-slate-950">
@@ -423,7 +423,7 @@
 
         const previousBox = choice.closest(".drop-box");
         if (previousBox) {
-          previousBox.querySelector(".drop-content").textContent = "Thả vào đây";
+          previousBox.querySelector(".drop-content").textContent = "...";
         }
 
         const existing = content.querySelector(".choice");
@@ -441,7 +441,7 @@
       function refreshPlaceholders() {
         document.querySelectorAll(".drop-content").forEach((content) => {
           if (!content.querySelector(".choice")) {
-            content.textContent = "Thả vào đây";
+            content.textContent = "...";
           }
         });
       }
@@ -470,7 +470,7 @@
             if (choice) {
               choice.classList.add("wrong-choice");
             }
-            badge.textContent = "Sửa lại";
+            badge.textContent = "Sai";
             badge.classList.add("bg-red-100", "text-red-700");
           }
         });

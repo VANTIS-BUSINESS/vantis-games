@@ -90,21 +90,47 @@
         color: var(--ink);
       }
 
+      .option-btn.answer-correct {
+        border-color: #16a34a;
+        background: #dcfce7;
+        color: #14532d;
+        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+      }
+
+      .option-btn.answer-wrong {
+        border-color: #dc2626;
+        background: #fee2e2;
+        color: #7f1d1d;
+      }
+
       .inline-answer {
-        border: 1px solid rgba(47, 128, 237, 0.16);
+        border: 2px solid rgba(22, 163, 74, 0.32);
+        background: #f0fdf4;
         box-shadow:
           0 14px 32px rgba(47, 128, 237, 0.08),
           inset 0 1px 0 rgba(255, 255, 255, 0.96);
       }
 
       .quiz-card.correct {
-        border-color: rgba(22, 163, 74, 0.52);
-        background: #f8fff9;
+        border-color: #16a34a;
+        border-width: 3px;
+        background: linear-gradient(145deg, #ecfdf5 0%, #ffffff 46%);
       }
 
       .quiz-card.wrong {
-        border-color: rgba(220, 38, 38, 0.38);
-        background: #fffafa;
+        border-color: #dc2626;
+        border-width: 3px;
+        background: linear-gradient(145deg, #fff1f2 0%, #ffffff 46%);
+      }
+
+      .result-badge {
+        border-radius: 999px;
+        display: inline-flex;
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        padding: 8px 12px;
+        text-transform: uppercase;
       }
 
       @media (max-width: 767px) {
@@ -254,6 +280,7 @@
 
         return `
           <article id="${style.id}" class="quiz-card rounded-3xl border border-blue-100 bg-white/88 p-5">
+            <div class="result-slot mb-4 hidden"></div>
             <div class="mb-5 flex flex-col gap-5 sm:flex-row sm:items-center">
               <div class="face face-avatar" style="background-position: ${style.position};"></div>
               <div class="min-w-0">
@@ -297,13 +324,33 @@
           const card = document.getElementById(style.id);
           const selected = answers.get(style.id);
           const inlineAnswer = card.querySelector(".inline-answer");
+          const resultSlot = card.querySelector(".result-slot");
           card.classList.remove("correct", "wrong");
+          card
+            .querySelectorAll(".option-btn")
+            .forEach((button) => button.classList.remove("answer-correct", "answer-wrong"));
 
           if (selected === style.id) {
             score++;
             card.classList.add("correct");
+            resultSlot.innerHTML = `<span class="result-badge bg-green-600 text-white">Đúng</span>`;
           } else {
             card.classList.add("wrong");
+            resultSlot.innerHTML = `<span class="result-badge bg-red-600 text-white">Sai</span>`;
+          }
+
+          resultSlot.classList.remove("hidden");
+
+          const correctButton = card.querySelector(`[data-answer="${style.id}"]`);
+          if (correctButton) {
+            correctButton.classList.add("answer-correct");
+          }
+
+          if (selected && selected !== style.id) {
+            const selectedButton = card.querySelector(`[data-answer="${selected}"]`);
+            if (selectedButton) {
+              selectedButton.classList.add("answer-wrong");
+            }
           }
 
           inlineAnswer.classList.remove("hidden");

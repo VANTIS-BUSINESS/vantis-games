@@ -83,13 +83,15 @@
       }
 
       .drop-zone.correct {
-        border-color: rgba(22, 163, 74, 0.55);
-        background: #f0fdf4;
+        border-color: #16a34a;
+        border-width: 3px;
+        background: #dcfce7;
       }
 
       .drop-zone.wrong {
-        border-color: rgba(220, 38, 38, 0.45);
-        background: #fff5f5;
+        border-color: #dc2626;
+        border-width: 3px;
+        background: #fee2e2;
       }
 
       .placed-card {
@@ -202,6 +204,17 @@
         return [...items].sort(() => Math.random() - 0.5);
       }
 
+      function shuffleOutOfOrder(items) {
+        const originalOrder = items.map((item) => item.letter).join("");
+        let shuffled = shuffle(items);
+
+        while (shuffled.map((item) => item.letter).join("") === originalOrder) {
+          shuffled = shuffle(items);
+        }
+
+        return shuffled;
+      }
+
       function initGame() {
         renderLetters();
         renderDropZones();
@@ -213,7 +226,7 @@
         const pool = document.getElementById("letterPool");
         pool.innerHTML = "";
 
-        shuffle(idealSteps).forEach((step) => {
+        shuffleOutOfOrder(idealSteps).forEach((step) => {
           pool.appendChild(createLetterCard(step));
         });
       }
@@ -237,7 +250,7 @@
         const zones = document.getElementById("dropZones");
         zones.innerHTML = "";
 
-        shuffle(idealSteps).forEach((step, index) => {
+        shuffleOutOfOrder(idealSteps).forEach((step) => {
           const zone = document.createElement("div");
           zone.className =
             "drop-zone rounded-2xl border border-dashed border-blue-200 bg-white/86 p-4";
@@ -245,7 +258,7 @@
           zone.innerHTML = `
             <div class="flex min-h-[76px] items-center gap-4">
               <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xl font-black text-slate-300">
-                ${index + 1}
+                ?
               </div>
               <div class="min-w-0 flex-1">
                 <p class="text-lg font-black text-[var(--ink)]">${step.vietnamese}</p>

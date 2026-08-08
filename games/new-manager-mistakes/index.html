@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sai lầm của quản lý mới - VANTIS Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --ink: #0d223f;
+        --blue: #2f80ed;
+        --teal: #20c5b5;
+        --red: #e94855;
+        --green: #17813b;
+        --paper: #f7fbff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 12% 10%, rgba(47, 128, 237, 0.16), transparent 30%),
+          radial-gradient(circle at 88% 10%, rgba(32, 197, 181, 0.13), transparent 26%),
+          linear-gradient(180deg, #ffffff 0%, var(--paper) 62%, #eef7fb 100%);
+        color: #102033;
+      }
+
+      .wrap {
+        margin: 0 auto;
+        max-width: 1540px;
+        padding: 0 18px;
+      }
+
+      .logo {
+        height: auto;
+        width: min(164px, 50vw);
+      }
+
+      .panel,
+      .choice,
+      .mistake-card,
+      .drop-box {
+        box-shadow:
+          0 18px 42px rgba(47, 128, 237, 0.1),
+          0 8px 18px rgba(13, 34, 63, 0.05),
+          inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      }
+
+      .choice {
+        cursor: grab;
+        min-height: 44px;
+        touch-action: none;
+        transition:
+          transform 150ms ease,
+          border-color 150ms ease,
+          background 150ms ease,
+          opacity 150ms ease;
+      }
+
+      .choice:hover,
+      .choice:focus-visible {
+        border-color: rgba(47, 128, 237, 0.78);
+        background: #eef7ff;
+        outline: 4px solid rgba(47, 128, 237, 0.15);
+        transform: translateY(-2px);
+      }
+
+      .choice.dragging {
+        opacity: 0.5;
+        transform: scale(0.98);
+      }
+
+      #answerPool .choice.used {
+        opacity: 0.46;
+      }
+
+      .drop-box {
+        cursor: default;
+        min-height: 44px;
+        transition:
+          transform 150ms ease,
+          border-color 150ms ease,
+          background 150ms ease;
+      }
+
+      .drop-box.drag-over {
+        border-color: rgba(47, 128, 237, 0.78);
+        background: #eef7ff;
+        transform: translateY(-1px);
+      }
+
+      .mistake-card {
+        transition:
+          border-color 150ms ease,
+          background 150ms ease,
+          transform 150ms ease;
+      }
+
+      .mistake-card.correct {
+        border-color: #16a34a;
+        border-width: 3px;
+        background: linear-gradient(145deg, #ecfdf3 0%, #ffffff 58%);
+      }
+
+      .mistake-card.wrong {
+        border-color: #dc2626;
+        border-width: 3px;
+        background: linear-gradient(145deg, #fff1f2 0%, #ffffff 58%);
+      }
+
+      .choice.correct-choice {
+        border-color: #16a34a;
+        background: #dcfce7;
+        color: #14532d;
+        opacity: 1;
+      }
+
+      .choice.wrong-choice {
+        border-color: #dc2626;
+        background: #fee2e2;
+        color: #7f1d1d;
+        opacity: 1;
+      }
+
+      .mistake-image {
+        height: 78px;
+        width: 100%;
+        object-fit: contain;
+        filter: drop-shadow(0 10px 16px rgba(13, 34, 63, 0.1));
+      }
+
+      .image-box {
+        width: 34%;
+        min-width: 106px;
+      }
+
+      @media (max-width: 767px) {
+        .wrap {
+          padding: 0 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="min-h-screen">
+      <header class="wrap flex items-center justify-between gap-4 py-3">
+        <a href="../../" aria-label="Về trang chủ">
+          <img src="../../assets/vantis-logo.png" alt="VANTIS" class="logo" />
+        </a>
+        <a
+          href="../../"
+          class="rounded-full border border-slate-200 bg-white/86 px-4 py-2 text-sm font-bold text-slate-600 shadow-sm transition hover:text-[var(--ink)]"
+        >
+          Trang chủ
+        </a>
+      </header>
+
+      <section class="wrap pb-8 pt-0">
+        <div class="mb-3">
+          <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+            Quản lý mới
+          </p>
+          <h1 class="mt-1 max-w-5xl text-3xl font-black leading-tight text-[var(--ink)]">
+            9 sai lầm thường gặp
+          </h1>
+          <p class="mt-1 text-sm font-bold text-slate-600">
+            Kéo câu trả lời vào đúng chỗ trống.
+          </p>
+        </div>
+
+        <div class="grid gap-4">
+          <aside class="panel rounded-2xl border border-blue-100 bg-white/90 p-3">
+            <div class="mb-2 flex items-center justify-between gap-3">
+              <h2 class="text-lg font-black text-[var(--ink)]">Đáp án</h2>
+              <button
+                id="resetBtn"
+                class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-600 transition hover:text-[var(--ink)]"
+              >
+                Chơi lại
+              </button>
+            </div>
+            <div id="answerPool" class="grid gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6"></div>
+          </aside>
+
+          <section>
+            <div id="mistakeGrid" class="grid gap-3 md:grid-cols-3"></div>
+
+            <button
+              id="submitBtn"
+              class="mt-4 min-h-12 w-full rounded-xl bg-[var(--ink)] px-5 text-base font-black text-white shadow-lg shadow-slate-300 transition hover:bg-slate-900"
+            >
+              Nộp bài
+            </button>
+
+            <p
+              id="scoreText"
+              class="mt-4 hidden rounded-2xl border border-blue-100 bg-white/90 p-4 text-center text-lg font-black text-[var(--ink)] shadow-sm"
+            ></p>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const mistakes = [
+        {
+          id: "delegate",
+          prefix: "",
+          suffix: "",
+          answer: "Không giao việc",
+          english: "Not Delegating Tasks",
+          image: "../../assets/SaiLam_1.png",
+        },
+        {
+          id: "details",
+          prefix: "Đi sâu vào",
+          suffix: "",
+          answer: "chi tiết",
+          english: "Diving Too Deep into the Details",
+          image: "../../assets/SaiLam_2.png",
+        },
+        {
+          id: "why",
+          prefix: "Quên hỏi",
+          suffix: "",
+          answer: "tại sao?",
+          english: 'Forgetting to Ask "Why?"',
+          image: "../../assets/SaiLam_3.png",
+        },
+        {
+          id: "change",
+          prefix: "Tạo ra nhiều",
+          suffix: "sớm",
+          answer: "thay đổi",
+          english: "Trying to Make Too Much Change Too Soon",
+          image: "../../assets/SaiLam_4.png",
+        },
+        {
+          id: "conversation",
+          prefix: "Tránh các cuộc",
+          suffix: "",
+          answer: "trò chuyện khó",
+          english: "Avoiding Difficult Conversations or Decisions",
+          image: "../../assets/SaiLam_5.png",
+        },
+        {
+          id: "trust",
+          prefix: "Không ưu tiên",
+          suffix: "",
+          answer: "niềm tin",
+          english: "Not Prioritizing Trust",
+          image: "../../assets/SaiLam_6.png",
+        },
+        {
+          id: "mentor",
+          prefix: "Không tìm",
+          suffix: "",
+          answer: "người cố vấn",
+          english: "Not Seeking Out Mentors",
+          image: "../../assets/SaiLam_7.png",
+        },
+        {
+          id: "we",
+          prefix: 'Nói "',
+          suffix: '" thay vì "chúng ta"',
+          answer: "tôi",
+          english: 'Saying "I" Instead of "We"',
+          image: "../../assets/SaiLam_8.png",
+        },
+        {
+          id: "listen",
+          prefix: "",
+          suffix: "> lắng nghe",
+          answer: "nói",
+          english: "Talking More and Listening Less",
+          image: "../../assets/SaiLam_9.png",
+        },
+      ];
+
+      const distractors = [
+        { id: "distractor-speed", answer: "làm nhanh" },
+        { id: "distractor-meeting", answer: "họp mỗi ngày" },
+        { id: "distractor-result", answer: "kết quả ngắn hạn" },
+      ];
+
+      let draggedChoice = null;
+
+      function shuffle(items) {
+        return [...items].sort(() => Math.random() - 0.5);
+      }
+
+      function initGame() {
+        draggedChoice = null;
+        renderPool();
+        renderMistakes();
+        const score = document.getElementById("scoreText");
+        score.classList.add("hidden");
+        score.textContent = "";
+      }
+
+      function renderPool() {
+        const pool = document.getElementById("answerPool");
+        pool.innerHTML = "";
+        shuffle([...mistakes, ...distractors]).forEach((item) => {
+          pool.appendChild(createChoice(item));
+        });
+      }
+
+      function createChoice(item) {
+        const choice = document.createElement("button");
+        choice.type = "button";
+        choice.className =
+          "choice rounded-xl border border-blue-100 bg-white px-3 py-2 text-left text-sm font-black text-[var(--ink)]";
+        choice.draggable = true;
+        choice.dataset.id = item.id;
+        choice.dataset.answer = item.answer;
+        choice.textContent = item.answer;
+        choice.addEventListener("dragstart", handleDragStart);
+        choice.addEventListener("dragend", handleDragEnd);
+        return choice;
+      }
+
+      function renderMistakes() {
+        const grid = document.getElementById("mistakeGrid");
+        grid.innerHTML = "";
+
+        mistakes.forEach((mistake, index) => {
+          const card = document.createElement("article");
+          card.className = "mistake-card rounded-2xl border border-blue-100 bg-white p-3";
+          card.dataset.answer = mistake.id;
+          card.innerHTML = `
+            <div class="flex min-h-[122px] gap-3">
+              <div class="flex flex-1 flex-col">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="text-3xl font-black leading-none text-slate-900">${index + 1}</div>
+                  <div class="result-badge hidden rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.12em]"></div>
+                </div>
+                <div class="mt-1 flex flex-1 flex-col justify-center">
+                  <p class="text-center text-base font-black leading-tight text-slate-950">
+                    ${mistake.prefix ? `<span>${mistake.prefix}</span>` : ""}
+                  </p>
+                  <div
+                    class="drop-box mt-2 w-full rounded-xl border-2 border-dashed border-blue-200 bg-white/94 px-3 py-2"
+                    data-answer="${mistake.id}"
+                  >
+                    <span class="drop-content flex min-h-6 items-center justify-center text-center text-xs font-black uppercase tracking-[0.12em] text-slate-400">
+                      Thả vào đây
+                    </span>
+                  </div>
+                  <p class="mt-2 text-center text-base font-black leading-tight text-slate-950">
+                    ${mistake.suffix ? `<span>${mistake.suffix}</span>` : ""}
+                  </p>
+                </div>
+              </div>
+              <div class="image-box grid place-items-center rounded-xl bg-slate-50 px-2 py-2">
+                <img class="mistake-image" src="${mistake.image}" alt="Hình gợi ý ${index + 1}" />
+              </div>
+            </div>
+            <div class="answer-note mt-2 hidden rounded-xl border border-slate-200 bg-white p-3">
+              <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Đáp án</p>
+              <p class="mt-1 text-base font-black text-[var(--ink)]">${mistake.answer}</p>
+              <p class="mt-1 text-sm font-bold text-slate-500">${mistake.english}</p>
+            </div>
+          `;
+
+          const dropBox = card.querySelector(".drop-box");
+          dropBox.addEventListener("dragover", handleDragOver);
+          dropBox.addEventListener("dragenter", handleDragEnter);
+          dropBox.addEventListener("dragleave", handleDragLeave);
+          dropBox.addEventListener("drop", handleDrop);
+          grid.appendChild(card);
+        });
+      }
+
+      function handleDragStart(event) {
+        draggedChoice = event.currentTarget;
+        draggedChoice.classList.add("dragging");
+        event.dataTransfer.effectAllowed = "move";
+      }
+
+      function handleDragEnd() {
+        if (draggedChoice) {
+          draggedChoice.classList.remove("dragging");
+        }
+        draggedChoice = null;
+        document.querySelectorAll(".drop-box").forEach((box) => box.classList.remove("drag-over"));
+      }
+
+      function handleDragOver(event) {
+        event.preventDefault();
+      }
+
+      function handleDragEnter(event) {
+        event.preventDefault();
+        event.currentTarget.classList.add("drag-over");
+      }
+
+      function handleDragLeave(event) {
+        event.currentTarget.classList.remove("drag-over");
+      }
+
+      function handleDrop(event) {
+        event.preventDefault();
+        const box = event.currentTarget;
+        box.classList.remove("drag-over");
+        if (!draggedChoice) return;
+        placeChoice(draggedChoice, box);
+      }
+
+      function placeChoice(choice, box) {
+        const content = box.querySelector(".drop-content");
+        const pool = document.getElementById("answerPool");
+        const card = box.closest(".mistake-card");
+
+        card.classList.remove("correct", "wrong");
+        card.querySelector(".answer-note").classList.add("hidden");
+        card.querySelector(".result-badge").classList.add("hidden");
+        choice.classList.remove("correct-choice", "wrong-choice");
+
+        const previousBox = choice.closest(".drop-box");
+        if (previousBox) {
+          previousBox.querySelector(".drop-content").textContent = "Thả vào đây";
+        }
+
+        const existing = content.querySelector(".choice");
+        if (existing && existing !== choice) {
+          existing.classList.remove("used", "correct-choice", "wrong-choice");
+          pool.appendChild(existing);
+        }
+
+        content.textContent = "";
+        content.appendChild(choice);
+        choice.classList.add("used");
+        refreshPlaceholders();
+      }
+
+      function refreshPlaceholders() {
+        document.querySelectorAll(".drop-content").forEach((content) => {
+          if (!content.querySelector(".choice")) {
+            content.textContent = "Thả vào đây";
+          }
+        });
+      }
+
+      function submitAnswers() {
+        let correct = 0;
+
+        document.querySelectorAll(".mistake-card").forEach((card) => {
+          const answerId = card.dataset.answer;
+          const choice = card.querySelector(".choice");
+          const badge = card.querySelector(".result-badge");
+          const note = card.querySelector(".answer-note");
+
+          card.classList.remove("correct", "wrong");
+          badge.classList.remove("hidden", "bg-green-100", "text-green-700", "bg-red-100", "text-red-700");
+          note.classList.remove("hidden");
+
+          if (choice && choice.dataset.id === answerId) {
+            correct++;
+            card.classList.add("correct");
+            choice.classList.add("correct-choice");
+            badge.textContent = "Đúng";
+            badge.classList.add("bg-green-100", "text-green-700");
+          } else {
+            card.classList.add("wrong");
+            if (choice) {
+              choice.classList.add("wrong-choice");
+            }
+            badge.textContent = "Sửa lại";
+            badge.classList.add("bg-red-100", "text-red-700");
+          }
+        });
+
+        const score = document.getElementById("scoreText");
+        score.textContent = `${correct}/${mistakes.length} đáp án đúng`;
+        score.classList.remove("hidden");
+      }
+
+      document.getElementById("submitBtn").addEventListener("click", submitAnswers);
+      document.getElementById("resetBtn").addEventListener("click", initGame);
+
+      initGame();
+    </script>
+  </body>
+</html>

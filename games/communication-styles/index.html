@@ -56,6 +56,12 @@
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
       }
 
+      .face.anonymous {
+        background-image: url("../../assets/andanh.jpg");
+        background-position: center !important;
+        background-size: cover;
+      }
+
       .face-avatar {
         height: 168px;
         width: 168px;
@@ -243,6 +249,53 @@
         },
       ];
 
+      const situations = [
+        {
+          id: "case-verbal-aggressiveness",
+          answerId: "verbal-aggressiveness",
+          title: "Cuộc họp bị kéo dài",
+          situation:
+            "Khi nhóm tranh luận mãi chưa ra quyết định, anh Khoa nói thẳng rằng cách hiện tại đang vòng vo, yêu cầu chốt ngay phương án và phản biện khá mạnh với những ý kiến anh cho là thiếu căn cứ.",
+          clue: "Nói trực diện, quyết liệt và dễ tạo áp lực.",
+          explanation:
+            "Người này dùng lời nói mạnh để thúc đẩy hành động và bảo vệ quan điểm. Dấu hiệu chính là sự trực diện, phản biện gay gắt và ít né tránh xung đột.",
+          position: "100% 0%",
+        },
+        {
+          id: "case-emotionality",
+          answerId: "emotionality",
+          title: "Nhân sự vừa mắc lỗi",
+          situation:
+            "Một bạn trong nhóm làm sai báo cáo và rất lo lắng. Chị Mai không trách ngay, chị hỏi bạn đang cảm thấy thế nào, trấn an trước rồi mới cùng xem lại lỗi để sửa.",
+          clue: "Phản ứng bằng sự thấu cảm và quan tâm cảm xúc.",
+          explanation:
+            "Người này ưu tiên cảm xúc và sự an toàn tâm lý trong trao đổi. Dấu hiệu rõ là lắng nghe cảm xúc trước khi đi vào xử lý công việc.",
+          position: "50% 100%",
+        },
+        {
+          id: "case-preciseness-2",
+          answerId: "preciseness",
+          title: "Bàn giao ca làm",
+          situation:
+            "Trước khi rời ca, anh Phúc ghi lại từng việc đã xong, việc còn mở, số liệu cần theo dõi và người nhận tiếp theo. Anh nhắc mọi người kiểm tra theo checklist để tránh bỏ sót.",
+          clue: "Có hệ thống, rõ đầu việc và tiêu chuẩn kiểm tra.",
+          explanation:
+            "Người này giao tiếp theo hướng chính xác và có cấu trúc. Dấu hiệu là dùng checklist, số liệu và trách nhiệm rõ ràng để giảm sai sót.",
+          position: "50% 0%",
+        },
+        {
+          id: "case-expressiveness-2",
+          answerId: "expressiveness",
+          title: "Giới thiệu ý tưởng mới",
+          situation:
+            "Trong buổi chia sẻ nội bộ, chị Linh nói rất sinh động, dùng ví dụ gần gũi, thay đổi giọng điệu liên tục và làm cả phòng cười trước khi đi vào ý chính.",
+          clue: "Biểu cảm rõ, giàu năng lượng và dễ kéo người nghe vào câu chuyện.",
+          explanation:
+            "Người này gây ảnh hưởng bằng sự sinh động trong cách nói. Dấu hiệu là nhiều ví dụ, biểu cảm, giọng điệu thay đổi và khả năng tạo không khí.",
+          position: "0% 0%",
+        },
+      ];
+
       let activeQuestions = [];
       const answers = new Map();
 
@@ -252,7 +305,19 @@
 
       function renderQuiz() {
         const grid = document.getElementById("quizGrid");
-        activeQuestions = shuffle(styles);
+        const reviewQuestions = styles.map((style) => ({
+          ...style,
+          type: "review",
+          answerId: style.id,
+          title: "Đoán phong cách phù hợp",
+          explanation:
+            "Dựa vào cặp điểm mạnh và điểm yếu, đây là phong cách giao tiếp khớp nhất với mô tả.",
+        }));
+        const caseQuestions = situations.map((situation) => ({
+          ...situation,
+          type: "case",
+        }));
+        activeQuestions = [...reviewQuestions, ...caseQuestions];
         grid.innerHTML = activeQuestions.map(createQuestionCard).join("");
 
         document.querySelectorAll(".option-btn").forEach((button) => {
@@ -262,14 +327,38 @@
         document.getElementById("scoreText").classList.add("hidden");
       }
 
-      function createQuestionCard(style, index) {
+      function createQuestionCard(question, index) {
+        const body =
+          question.type === "review"
+            ? `
+              <div class="grid gap-3 md:grid-cols-2">
+                <div class="rounded-2xl bg-green-50 p-4">
+                  <p class="text-xs font-black uppercase tracking-[0.16em] text-green-700">Điểm mạnh</p>
+                  <p class="mt-2 text-sm font-bold leading-6 text-slate-700">${question.strength}</p>
+                </div>
+                <div class="rounded-2xl bg-rose-50 p-4">
+                  <p class="text-xs font-black uppercase tracking-[0.16em] text-rose-700">Điểm yếu</p>
+                  <p class="mt-2 text-sm font-bold leading-6 text-slate-700">${question.weakness}</p>
+                </div>
+              </div>
+            `
+            : `
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="text-sm font-bold leading-6 text-slate-700">${question.situation}</p>
+              </div>
+              <div class="mt-3 rounded-2xl bg-blue-50 p-4">
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-blue-700">Dấu hiệu</p>
+                <p class="mt-2 text-sm font-bold leading-6 text-slate-700">${question.clue}</p>
+              </div>
+            `;
+
         const options = shuffle(styles)
           .map(
             (item) => `
               <button
                 class="option-btn rounded-xl border border-slate-200 bg-white px-4 py-3 text-left font-black text-slate-500"
                 type="button"
-                data-question="${style.id}"
+                data-question="${question.id}"
                 data-answer="${item.id}"
               >
                 ${item.label}
@@ -279,25 +368,21 @@
           .join("");
 
         return `
-          <article id="${style.id}" class="quiz-card rounded-3xl border border-blue-100 bg-white/88 p-5">
+          <article id="${question.id}" class="quiz-card rounded-3xl border border-blue-100 bg-white/88 p-5">
             <div class="result-slot mb-4 hidden"></div>
             <div class="mb-5 flex flex-col gap-5 sm:flex-row sm:items-center">
-              <div class="face face-avatar" style="background-position: ${style.position};"></div>
+              <div
+                class="face face-avatar ${question.type === "case" ? "anonymous" : ""}"
+                style="background-position: ${question.position};"
+              ></div>
               <div class="min-w-0">
-                <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Gợi ý ${index + 1}</p>
-                <p class="mt-2 text-xl font-black leading-tight text-[var(--ink)]">Đoán phong cách phù hợp</p>
+                <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                  ${question.type === "review" ? `Gợi ý ${index + 1}` : `Tình huống ${index + 1}`}
+                </p>
+                <p class="mt-2 text-xl font-black leading-tight text-[var(--ink)]">${question.title}</p>
               </div>
             </div>
-            <div class="grid gap-3 md:grid-cols-2">
-              <div class="rounded-2xl bg-green-50 p-4">
-                <p class="text-xs font-black uppercase tracking-[0.16em] text-green-700">Điểm mạnh</p>
-                <p class="mt-2 text-sm font-bold leading-6 text-slate-700">${style.strength}</p>
-              </div>
-              <div class="rounded-2xl bg-rose-50 p-4">
-                <p class="text-xs font-black uppercase tracking-[0.16em] text-rose-700">Điểm yếu</p>
-                <p class="mt-2 text-sm font-bold leading-6 text-slate-700">${style.weakness}</p>
-              </div>
-            </div>
+            ${body}
             <div class="mt-4 grid gap-2 sm:grid-cols-2">${options}</div>
             <div class="inline-answer mt-4 hidden rounded-2xl bg-white p-4"></div>
           </article>
@@ -320,9 +405,10 @@
       function submitQuiz() {
         let score = 0;
 
-        activeQuestions.forEach((style) => {
-          const card = document.getElementById(style.id);
-          const selected = answers.get(style.id);
+        activeQuestions.forEach((question) => {
+          const correctStyle = styles.find((style) => style.id === question.answerId);
+          const card = document.getElementById(question.id);
+          const selected = answers.get(question.id);
           const inlineAnswer = card.querySelector(".inline-answer");
           const resultSlot = card.querySelector(".result-slot");
           card.classList.remove("correct", "wrong");
@@ -330,7 +416,7 @@
             .querySelectorAll(".option-btn")
             .forEach((button) => button.classList.remove("answer-correct", "answer-wrong"));
 
-          if (selected === style.id) {
+          if (selected === question.answerId) {
             score++;
             card.classList.add("correct");
             resultSlot.innerHTML = `<span class="result-badge bg-green-600 text-white">Đúng</span>`;
@@ -341,12 +427,12 @@
 
           resultSlot.classList.remove("hidden");
 
-          const correctButton = card.querySelector(`[data-answer="${style.id}"]`);
+          const correctButton = card.querySelector(`[data-answer="${question.answerId}"]`);
           if (correctButton) {
             correctButton.classList.add("answer-correct");
           }
 
-          if (selected && selected !== style.id) {
+          if (selected && selected !== question.answerId) {
             const selectedButton = card.querySelector(`[data-answer="${selected}"]`);
             if (selectedButton) {
               selectedButton.classList.add("answer-wrong");
@@ -354,13 +440,25 @@
           }
 
           inlineAnswer.classList.remove("hidden");
-          inlineAnswer.innerHTML = `
-            <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Đáp án</p>
-            <p class="mt-2 text-lg font-black text-[var(--ink)]">${style.label}</p>
-            <p class="mt-1 text-sm font-black text-slate-500">${style.english}</p>
-            <p class="mt-3 text-sm leading-6 text-slate-600"><span class="font-black text-green-700">Điểm mạnh:</span> ${style.strength}</p>
-            <p class="mt-2 text-sm leading-6 text-slate-600"><span class="font-black text-rose-700">Điểm yếu:</span> ${style.weakness}</p>
-          `;
+          inlineAnswer.innerHTML =
+            question.type === "review"
+              ? `
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Đáp án</p>
+                <p class="mt-2 text-lg font-black text-[var(--ink)]">${correctStyle.label}</p>
+                <p class="mt-1 text-sm font-black text-slate-500">${correctStyle.english}</p>
+              `
+              : `
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Đáp án</p>
+                <p class="mt-2 text-lg font-black text-[var(--ink)]">${correctStyle.label}</p>
+                <p class="mt-1 text-sm font-black text-slate-500">${correctStyle.english}</p>
+                <p class="mt-3 text-sm leading-6 text-slate-600"><span class="font-black text-blue-700">Vì sao:</span> ${question.explanation}</p>
+              `;
+
+          if (question.type === "case") {
+            const face = card.querySelector(".face-avatar");
+            face.classList.remove("anonymous");
+            face.style.backgroundPosition = correctStyle.position;
+          }
         });
 
         const scoreText = document.getElementById("scoreText");

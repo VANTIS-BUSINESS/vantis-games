@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Xây dựng mục tiêu - Quản lý hiệu quả - VANTIS Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --ink: #0d223f;
+        --line: #2d67c8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        overflow-x: hidden;
+        background: linear-gradient(180deg, #ffffff 0%, #f3fbff 100%);
+        color: #101827;
+      }
+
+      .wrap {
+        margin: 0 auto;
+        max-width: 1500px;
+        padding: 0 20px;
+      }
+
+      .logo {
+        height: auto;
+        width: min(210px, 56vw);
+      }
+
+      .slide {
+        overflow: hidden;
+        border: 2px solid rgba(13, 34, 63, 0.18);
+        border-radius: 8px;
+        background: linear-gradient(180deg, #e8f8ff 0%, #f8fcff 62%, #dff4ff 100%);
+        box-shadow:
+          0 22px 58px rgba(13, 34, 63, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      }
+
+      .slide-top {
+        background: linear-gradient(135deg, #172332 0%, #0d223f 58%, #122f55 100%);
+      }
+
+      .choice-btn {
+        min-height: 42px;
+        border: 2px solid #244c8f;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #0d223f;
+        font-weight: 900;
+        transition:
+          transform 130ms ease,
+          background 130ms ease,
+          color 130ms ease,
+          border-color 130ms ease;
+      }
+
+      .choice-btn:hover,
+      .choice-btn.selected {
+        transform: translateY(-2px);
+        border-color: #0d223f;
+        background: #0d223f;
+        color: #ffffff;
+      }
+
+      .choice-btn.used {
+        border-color: #cbd5e1;
+        background: #eef2f7;
+        color: #94a3b8;
+      }
+
+      .task-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 48px;
+        row-gap: 8px;
+      }
+
+      .task-item {
+        display: grid;
+        grid-template-columns: 42px 1fr;
+        gap: 12px;
+        align-items: start;
+        font-size: clamp(15px, 1.35vw, 22px);
+        font-weight: 800;
+        line-height: 1.28;
+      }
+
+      .task-item.used {
+        color: #64748b;
+      }
+
+      .task-item.used span:last-child {
+        text-decoration: line-through;
+        text-decoration-color: #dc2626;
+        text-decoration-thickness: 4px;
+      }
+
+      .letter-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .diagram-wrap {
+        overflow-x: auto;
+        padding: 20px 10px 4px;
+      }
+
+      .diagram {
+        position: relative;
+        height: 340px;
+        min-width: 1160px;
+      }
+
+      .flow-lines {
+        position: absolute;
+        inset: 0;
+        height: 100%;
+        width: 100%;
+        pointer-events: none;
+      }
+
+      .flow-lines path {
+        fill: none;
+        stroke: var(--line);
+        stroke-linecap: square;
+        stroke-linejoin: round;
+        stroke-width: 1.7;
+      }
+
+      .slot-btn {
+        position: absolute;
+        z-index: 1;
+        display: grid;
+        height: 42px;
+        width: 64px;
+        place-items: center;
+        border: 4px solid #244c8f;
+        border-radius: 3px;
+        background: #ffffff;
+        color: #0d223f;
+        font-size: 28px;
+        font-weight: 900;
+        line-height: 1;
+        transition:
+          transform 130ms ease,
+          background 130ms ease,
+          border-color 130ms ease;
+      }
+
+      .slot-btn:hover {
+        transform: translateY(-2px);
+        background: #f8fbff;
+        border-color: #0d223f;
+      }
+
+      .slot-btn.correct {
+        border-color: #16a34a;
+        background: #dcfce7;
+      }
+
+      .slot-btn.wrong {
+        border-color: #dc2626;
+        background: #fee2e2;
+      }
+
+      .slot-btn.empty {
+        color: #cbd5e1;
+      }
+
+      .slot-btn.hint {
+        border-color: #244c8f;
+        background: #eef6ff;
+        color: #0d223f;
+      }
+
+      .slot-btn.hint::after {
+        content: "Gợi ý";
+        position: absolute;
+        left: 50%;
+        top: -22px;
+        transform: translateX(-50%);
+        border-radius: 999px;
+        background: #0d223f;
+        padding: 2px 7px;
+        color: #ffffff;
+        font-size: 10px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .answer-flow {
+        margin-top: 14px;
+        border-top: 1px solid rgba(45, 103, 200, 0.18);
+        padding-top: 14px;
+      }
+
+      .answer-diagram {
+        height: 340px;
+        min-width: 1160px;
+      }
+
+      @media (max-width: 900px) {
+        .task-list {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (min-width: 640px) {
+        .letter-grid {
+          grid-template-columns: repeat(8, minmax(0, 1fr));
+        }
+      }
+
+      @media (min-width: 1024px) {
+        .letter-grid {
+          grid-template-columns: repeat(15, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 767px) {
+        .wrap {
+          padding: 0 14px;
+        }
+
+        .task-item {
+          grid-template-columns: 34px 1fr;
+          gap: 8px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="min-h-screen">
+      <header class="wrap flex items-center justify-between gap-4 py-5">
+        <a href="../../" aria-label="Về trang chủ">
+          <img src="../../assets/vantis-logo.png" alt="VANTIS" class="logo" />
+        </a>
+        <a
+          href="../../"
+          class="rounded-full border border-slate-200 bg-white/86 px-4 py-2 text-sm font-bold text-slate-600 shadow-sm transition hover:text-[var(--ink)]"
+        >
+          Trang chủ
+        </a>
+      </header>
+
+      <section class="wrap pb-10">
+        <div class="slide">
+          <div class="slide-top h-12"></div>
+
+          <div class="px-5 pb-6 pt-5 md:px-10">
+            <h1 class="text-center text-2xl font-black leading-tight text-black md:text-4xl">
+              Mục tiêu: Hoàn tất chương trình đào tạo CSKH vào cuối tháng 05
+            </h1>
+
+            <div id="taskList" class="task-list mt-6"></div>
+
+            <div class="mt-6 grid gap-4 rounded-lg border border-blue-100 bg-white/78 p-4 xl:grid-cols-[1fr_auto]">
+              <div>
+                <p class="text-sm font-black uppercase tracking-[0.16em] text-slate-400">
+                  Chọn chữ cái
+                </p>
+                <div id="letterPool" class="letter-grid mt-3"></div>
+              </div>
+              <div class="flex items-end gap-2">
+                <button
+                  id="resetBtn"
+                  class="min-h-11 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-600 transition hover:text-[var(--ink)]"
+                >
+                  Chơi lại
+                </button>
+                <button
+                  id="submitBtn"
+                  class="min-h-11 rounded-lg bg-[var(--ink)] px-5 text-sm font-black text-white shadow-lg shadow-slate-300 transition hover:bg-slate-900"
+                >
+                  Nộp bài
+                </button>
+              </div>
+            </div>
+
+            <p id="selectedText" class="mt-3 min-h-6 text-sm font-bold text-slate-600">
+              Bấm chọn một chữ cái, rồi bấm vào ô trống trên lưu đồ.
+            </p>
+
+            <div class="diagram-wrap">
+              <div id="diagram" class="diagram"></div>
+            </div>
+
+            <div id="answersPanel" class="mt-4 hidden rounded-lg border border-blue-100 bg-white/84 p-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2 class="text-xl font-black text-[var(--ink)]">Kết quả</h2>
+                <p id="scoreText" class="text-sm font-bold text-slate-500"></p>
+              </div>
+              <div class="answer-flow">
+                <p class="text-sm font-black uppercase tracking-[0.16em] text-slate-400">
+                  Lưu đồ đáp án đúng
+                </p>
+                <div class="diagram-wrap">
+                  <div id="answerDiagram" class="diagram answer-diagram"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const tasks = [
+        { letter: "A", text: "Xây dựng bài Test đánh giá năng lực" },
+        { letter: "B", text: "Thực hiện Test nhân viên" },
+        { letter: "C", text: "Báo cáo kết quả Test" },
+        { letter: "D", text: "Lập danh sách học viên" },
+        { letter: "E", text: "Biên soạn nội dung đào tạo" },
+        { letter: "F", text: "Biên soạn bài tập" },
+        { letter: "G", text: "Biên soạn bài thi cuối khóa" },
+        { letter: "H", text: "Lựa chọn giảng viên" },
+        { letter: "I", text: "In tài liệu đào tạo" },
+        { letter: "J", text: "Chuẩn bị phòng họp và các phương tiện thiết bị" },
+        { letter: "K", text: "Chuẩn bị văn phòng phẩm" },
+        { letter: "L", text: "Thực hiện chương trình đào tạo" },
+        { letter: "M", text: "Tổ chức thi cuối khóa" },
+        { letter: "N", text: "Đánh giá kết quả sau đào tạo" },
+        { letter: "O", text: "Báo cáo kết quả đào tạo" },
+      ];
+
+      const hintLetters = ["H", "A", "E", "G", "J", "L", "O"];
+      const flowNodes = [
+        { answer: "H", x: 10, y: 144 },
+        { answer: "A", x: 92, y: 144 },
+        { answer: "B", x: 174, y: 144 },
+        { answer: "C", x: 256, y: 144 },
+        { answer: "D", x: 390, y: 54 },
+        { answer: "E", x: 390, y: 144 },
+        { answer: "F", x: 472, y: 144 },
+        { answer: "G", x: 472, y: 264 },
+        { answer: "I", x: 636, y: 54 },
+        { answer: "J", x: 636, y: 144 },
+        { answer: "K", x: 636, y: 234 },
+        { answer: "L", x: 820, y: 144 },
+        { answer: "M", x: 902, y: 144 },
+        { answer: "N", x: 984, y: 144 },
+        { answer: "O", x: 1066, y: 144 },
+      ];
+
+      let selectedLetter = "";
+      const placements = {};
+
+      function initGame() {
+        selectedLetter = "";
+        Object.keys(placements).forEach((key) => delete placements[key]);
+        hintLetters.forEach((letter) => {
+          placements[letter] = letter;
+        });
+        renderTaskList();
+        renderLetters();
+        renderDiagram();
+        renderAnswerDiagram();
+        updateSelectedText();
+        document.getElementById("answersPanel").classList.add("hidden");
+      }
+
+      function renderTaskList() {
+        const usedLetters = new Set(Object.values(placements));
+        document.getElementById("taskList").innerHTML = tasks
+          .map(
+            (task) => `
+              <div class="task-item ${usedLetters.has(task.letter) ? "used" : ""}">
+                <span>${task.letter}.</span>
+                <span>${task.text}</span>
+              </div>
+            `
+          )
+          .join("");
+      }
+
+      function renderLetters() {
+        const usedLetters = new Set(Object.values(placements));
+        document.getElementById("letterPool").innerHTML = tasks
+          .map((task) => {
+            const isUsed = usedLetters.has(task.letter);
+            const isSelected = selectedLetter === task.letter;
+            return `
+              <button
+                class="choice-btn ${isUsed ? "used" : ""} ${isSelected ? "selected" : ""}"
+                data-letter="${task.letter}"
+                type="button"
+                ${isUsed ? "disabled" : ""}
+              >
+                ${task.letter}
+              </button>
+            `;
+          })
+          .join("");
+
+        document.querySelectorAll(".choice-btn").forEach((button) => {
+          button.addEventListener("click", () => selectLetter(button.dataset.letter));
+        });
+      }
+
+      function renderDiagram() {
+        const diagram = document.getElementById("diagram");
+        diagram.innerHTML = createFlowSvg("mainArrow", "0 0 1160 340");
+
+        flowNodes.forEach((node) => {
+          const button = document.createElement("button");
+          const value = placements[node.answer] || "";
+          const isHint = hintLetters.includes(node.answer);
+          button.type = "button";
+          button.className = `slot-btn ${value ? "" : "empty"} ${isHint ? "hint" : ""}`;
+          button.dataset.answer = node.answer;
+          button.style.left = `${node.x}px`;
+          button.style.top = `${node.y}px`;
+          button.textContent = value || "?";
+          button.addEventListener("click", () => {
+            if (!isHint) placeSelectedLetter(node.answer);
+          });
+          diagram.appendChild(button);
+        });
+      }
+
+      function renderAnswerDiagram() {
+        const diagram = document.getElementById("answerDiagram");
+        diagram.innerHTML = createFlowSvg("answerArrow", "0 0 1160 340");
+
+        flowNodes.forEach((node) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "slot-btn correct";
+          button.style.left = `${node.x}px`;
+          button.style.top = `${node.y}px`;
+          button.textContent = node.answer;
+          diagram.appendChild(button);
+        });
+      }
+
+      function createFlowSvg(markerId, viewBox) {
+        return `
+          <svg class="flow-lines" viewBox="${viewBox}" preserveAspectRatio="xMinYMin meet" aria-hidden="true">
+            <defs>
+              <marker id="${markerId}" markerHeight="5" markerWidth="6" orient="auto" refX="5.5" refY="2.5">
+                <path d="M0,0 L6,2.5 L0,5 Z" fill="#2d67c8"></path>
+              </marker>
+            </defs>
+            <path marker-end="url(#${markerId})" d="M74 165 H90"></path>
+            <path marker-end="url(#${markerId})" d="M156 165 H172"></path>
+            <path marker-end="url(#${markerId})" d="M238 165 H254"></path>
+            <path d="M320 165 H354 V75 H388"></path>
+            <path marker-end="url(#${markerId})" d="M354 75 H388"></path>
+            <path marker-end="url(#${markerId})" d="M320 165 H388"></path>
+            <path d="M320 165 H354 V285 H470"></path>
+            <path marker-end="url(#${markerId})" d="M354 285 H470"></path>
+            <path marker-end="url(#${markerId})" d="M454 165 H470"></path>
+            <path marker-end="url(#${markerId})" d="M536 165 H634"></path>
+            <path d="M536 165 H580 V75 H634"></path>
+            <path marker-end="url(#${markerId})" d="M580 75 H634"></path>
+            <path d="M536 165 H580 V255 H634"></path>
+            <path marker-end="url(#${markerId})" d="M580 255 H634"></path>
+            <path d="M700 75 H750 V165 H818"></path>
+            <path d="M700 165 H818"></path>
+            <path d="M700 255 H750 V165 H818"></path>
+            <path marker-end="url(#${markerId})" d="M750 165 H818"></path>
+            <path marker-end="url(#${markerId})" d="M884 165 H900"></path>
+            <path marker-end="url(#${markerId})" d="M966 165 H982"></path>
+            <path marker-end="url(#${markerId})" d="M1048 165 H1064"></path>
+          </svg>
+        `;
+      }
+
+      function selectLetter(letter) {
+        selectedLetter = selectedLetter === letter ? "" : letter;
+        renderLetters();
+        updateSelectedText();
+      }
+
+      function placeSelectedLetter(answer) {
+        if (hintLetters.includes(answer)) return;
+
+        if (!selectedLetter) {
+          if (placements[answer]) {
+            selectedLetter = placements[answer];
+            delete placements[answer];
+            renderTaskList();
+            renderLetters();
+            renderDiagram();
+            updateSelectedText();
+          }
+          return;
+        }
+
+        const oldSlot = Object.keys(placements).find((key) => placements[key] === selectedLetter);
+        if (oldSlot && !hintLetters.includes(oldSlot)) {
+          delete placements[oldSlot];
+        }
+
+        placements[answer] = selectedLetter;
+        selectedLetter = "";
+        renderTaskList();
+        renderLetters();
+        renderDiagram();
+        updateSelectedText();
+      }
+
+      function updateSelectedText() {
+        const text = document.getElementById("selectedText");
+        if (!selectedLetter) {
+          text.textContent = "Bấm chọn một chữ cái, rồi bấm vào ô trống trên lưu đồ.";
+          return;
+        }
+
+        const task = tasks.find((item) => item.letter === selectedLetter);
+        text.textContent = `Đang chọn ${task.letter}: ${task.text}`;
+      }
+
+      function submitAnswers() {
+        let correct = 0;
+
+        document.querySelectorAll(".slot-btn").forEach((button) => {
+          const answer = button.dataset.answer;
+          if (!answer) return;
+          const value = placements[answer];
+          button.classList.remove("correct", "wrong");
+
+          if (value === answer) {
+            correct++;
+            button.classList.add("correct");
+          } else {
+            button.classList.add("wrong");
+          }
+        });
+
+        document.getElementById("scoreText").textContent = `${correct}/${flowNodes.length} ô đúng`;
+        document.getElementById("answersPanel").classList.remove("hidden");
+      }
+
+      document.getElementById("resetBtn").addEventListener("click", initGame);
+      document.getElementById("submitBtn").addEventListener("click", submitAnswers);
+
+      initGame();
+    </script>
+  </body>
+</html>

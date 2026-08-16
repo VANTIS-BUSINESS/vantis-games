@@ -53,6 +53,9 @@
       .job-card {
         cursor: grab;
         touch-action: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
         transition:
           transform 150ms ease,
           box-shadow 150ms ease,
@@ -151,6 +154,8 @@
         font-size: 14px;
         line-height: 1.25;
         min-width: 0;
+        user-select: none;
+        -webkit-user-select: none;
       }
 
       .zone-drop .job-card p + p {
@@ -757,6 +762,11 @@
       document.getElementById("closeScoreAlert").addEventListener("click", () => {
         closeScoreAlert();
         document.getElementById("answersPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      document.addEventListener("contextmenu", (event) => {
+        if (event.target.closest(".job-card, .disc-zone, #jobPool")) {
+          event.preventDefault();
+        }
       });
 
       initGame();

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DISC - VANTIS Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --ink: #0d223f;
+        --red: #e94855;
+        --gold: #f4b740;
+        --blue: #2f80ed;
+        --green: #17813b;
+        --paper: #f7fbff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 12% 10%, rgba(233, 72, 85, 0.13), transparent 28%),
+          radial-gradient(circle at 86% 9%, rgba(47, 128, 237, 0.13), transparent 30%),
+          linear-gradient(180deg, #ffffff 0%, var(--paper) 64%, #edf7f3 100%);
+        color: #102033;
+      }
+
+      .wrap {
+        margin: 0 auto;
+        max-width: 1380px;
+        padding: 0 24px;
+      }
+
+      .logo {
+        height: auto;
+        width: min(220px, 58vw);
+      }
+
+      .job-card,
+      .disc-zone,
+      .answer-card,
+      .matrix-shell {
+        box-shadow:
+          0 18px 42px rgba(47, 128, 237, 0.1),
+          0 8px 18px rgba(13, 34, 63, 0.05),
+          inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      }
+
+      .job-card {
+        cursor: grab;
+        touch-action: none;
+        transition:
+          transform 150ms ease,
+          box-shadow 150ms ease,
+          opacity 150ms ease,
+          border-color 150ms ease,
+          background 150ms ease;
+      }
+
+      .job-card:hover,
+      .job-card.selected {
+        transform: translateY(-3px);
+        box-shadow:
+          0 24px 54px rgba(47, 128, 237, 0.16),
+          0 10px 24px rgba(13, 34, 63, 0.08);
+      }
+
+      .job-card.selected {
+        border-color: rgba(47, 128, 237, 0.72);
+        outline: 4px solid rgba(47, 128, 237, 0.14);
+      }
+
+      .job-card.dragging {
+        opacity: 0.55;
+        transform: scale(0.97);
+      }
+
+      .disc-zone {
+        min-height: 220px;
+        transition:
+          border-color 150ms ease,
+          background 150ms ease,
+          transform 150ms ease;
+      }
+
+      .disc-zone.drag-over {
+        border-color: var(--zone-color);
+        background: var(--zone-soft);
+        transform: translateY(-3px);
+      }
+
+      .disc-zone.correct {
+        border-color: #16a34a;
+        border-width: 3px;
+        background: #ecfdf5;
+      }
+
+      .disc-zone.wrong {
+        border-color: #dc2626;
+        border-width: 3px;
+        background: #fff1f2;
+      }
+
+      .answer-job {
+        transition:
+          background 150ms ease,
+          border-color 150ms ease,
+          color 150ms ease,
+          box-shadow 150ms ease;
+      }
+
+      .answer-job.done-correct {
+        background: #dcfce7;
+        border: 1px solid #16a34a;
+        color: #14532d;
+        box-shadow: 0 8px 18px rgba(22, 163, 74, 0.12);
+      }
+
+      .zone-drop {
+        align-content: start;
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+        min-height: 86px;
+      }
+
+      .zone-drop .job-card {
+        align-items: center;
+        border-radius: 14px;
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+        min-height: 44px;
+        padding: 10px 12px;
+        box-shadow:
+          0 8px 18px rgba(13, 34, 63, 0.05),
+          inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      }
+
+      .zone-drop .job-card:hover,
+      .zone-drop .job-card.selected {
+        transform: translateY(-1px);
+      }
+
+      .zone-drop .job-card p:first-child {
+        flex: 1;
+        font-size: 14px;
+        line-height: 1.25;
+        min-width: 0;
+      }
+
+      .zone-drop .job-card p + p {
+        display: none;
+      }
+
+      .remove-job {
+        align-items: center;
+        background: rgba(233, 72, 85, 0.18);
+        border-radius: 999px;
+        color: rgba(201, 45, 59, 0.72);
+        display: none;
+        flex: 0 0 auto;
+        font-size: 16px;
+        font-weight: 900;
+        height: 24px;
+        justify-content: center;
+        line-height: 1;
+        width: 24px;
+      }
+
+      .zone-drop .remove-job {
+        display: inline-flex;
+      }
+
+      .remove-job:hover {
+        background: rgba(233, 72, 85, 0.28);
+        color: #c92d3b;
+      }
+
+      .score-alert {
+        align-items: center;
+        background: rgba(13, 34, 63, 0.46);
+        display: none;
+        inset: 0;
+        justify-content: center;
+        padding: 24px;
+        position: fixed;
+        z-index: 50;
+      }
+
+      .score-alert.show {
+        display: flex;
+      }
+
+      .score-card {
+        animation: score-pop 260ms ease-out both;
+        max-width: 420px;
+        position: relative;
+        width: min(100%, 420px);
+        z-index: 2;
+      }
+
+      .fireworks {
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        position: fixed;
+        z-index: 1;
+      }
+
+      .firework-particle {
+        animation: firework-burst 900ms ease-out forwards;
+        background: var(--spark-color);
+        border-radius: 999px;
+        height: 9px;
+        left: var(--spark-x);
+        position: absolute;
+        top: var(--spark-y);
+        transform: translate(-50%, -50%);
+        width: 9px;
+      }
+
+      @keyframes score-pop {
+        from {
+          opacity: 0;
+          transform: translateY(12px) scale(0.94);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes firework-burst {
+        0% {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(0.7);
+        }
+
+        78% {
+          opacity: 0.95;
+        }
+
+        100% {
+          opacity: 0;
+          transform: translate(calc(-50% + var(--spark-dx)), calc(-50% + var(--spark-dy))) scale(0.1);
+        }
+      }
+
+      .compass {
+        position: relative;
+        height: 86px;
+        width: 86px;
+        border: 4px solid rgba(13, 34, 63, 0.18);
+        border-radius: 999px;
+        background:
+          linear-gradient(90deg, transparent 48%, rgba(47, 128, 237, 0.55) 48% 52%, transparent 52%),
+          linear-gradient(0deg, transparent 48%, rgba(47, 128, 237, 0.55) 48% 52%, transparent 52%),
+          radial-gradient(circle at center, rgba(47, 128, 237, 0.28), rgba(255, 255, 255, 0.92) 54%);
+      }
+
+      .compass::before,
+      .compass::after {
+        content: "";
+        position: absolute;
+        inset: 10px 39px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #e94855, #f4b740 44%, #2f80ed);
+        transform: rotate(45deg);
+      }
+
+      .compass::after {
+        transform: rotate(-45deg);
+        opacity: 0.72;
+      }
+
+      .axis-label {
+        position: absolute;
+        z-index: 2;
+        font-size: 10px;
+        font-weight: 900;
+        color: rgba(13, 34, 63, 0.58);
+      }
+
+      .axis-n {
+        left: 50%;
+        top: 4px;
+        transform: translateX(-50%);
+      }
+
+      .axis-e {
+        right: 7px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+
+      .axis-s {
+        bottom: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .axis-w {
+        left: 7px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+
+      @media (max-width: 767px) {
+        .wrap {
+          padding: 0 16px;
+        }
+
+        .disc-zone {
+          min-height: 180px;
+        }
+
+        .zone-drop {
+          grid-template-columns: 1fr;
+          min-height: 70px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="min-h-screen">
+      <header class="wrap flex items-center justify-between gap-4 py-6">
+        <a href="../../" aria-label="Về trang chủ">
+          <img src="../../assets/vantis-logo.png" alt="VANTIS" class="logo" />
+        </a>
+        <a
+          href="../../"
+          class="rounded-full border border-slate-200 bg-white/82 px-4 py-2 text-sm font-bold text-slate-600 shadow-sm transition hover:text-[var(--ink)]"
+        >
+          Trang chủ
+        </a>
+      </header>
+
+      <section class="wrap pb-12 pt-2">
+        <div class="mb-6 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div>
+            <p class="text-sm font-black uppercase tracking-[0.18em] text-slate-400">
+              Ma trận nhân sự
+            </p>
+            <h1 class="mt-2 text-3xl font-black leading-tight text-[var(--ink)] md:text-5xl">
+              DISC: Cấu trúc đội ngũ
+            </h1>
+          </div>
+
+          <div class="matrix-shell flex items-center gap-5 rounded-3xl border border-blue-100 bg-white/82 p-4">
+            <div class="compass shrink-0" aria-hidden="true">
+              <span class="axis-label axis-n">D</span>
+              <span class="axis-label axis-e">I</span>
+              <span class="axis-label axis-s">S</span>
+              <span class="axis-label axis-w">C</span>
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm font-black text-[var(--ink)]">4 nhóm hành vi công việc</p>
+              <p id="selectedText" class="mt-1 text-sm font-bold text-slate-500">
+                Chọn một vị trí để đặt vào nhóm DISC.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-6 xl:grid-cols-[0.68fr_1.32fr]">
+          <section class="rounded-3xl border border-blue-100 bg-white/86 p-5">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 class="text-lg font-black text-[var(--ink)]">Vị trí công việc</h2>
+              <button
+                id="resetBtn"
+                class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600 transition hover:text-[var(--ink)]"
+              >
+                Chơi lại
+              </button>
+            </div>
+            <div id="jobPool" class="grid max-h-[680px] gap-3 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-1"></div>
+          </section>
+
+          <section>
+            <div id="discZones" class="grid gap-4 lg:grid-cols-2"></div>
+            <button
+              id="submitBtn"
+              class="mt-4 min-h-12 w-full rounded-xl bg-[var(--ink)] px-5 text-base font-black text-white shadow-lg shadow-slate-300 transition hover:bg-slate-900"
+            >
+              Nộp bài
+            </button>
+          </section>
+        </div>
+
+        <section id="answersPanel" class="mt-8 hidden">
+          <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
+            <h2 class="text-2xl font-black text-[var(--ink)]">Đáp án</h2>
+            <p id="scoreText" class="text-sm font-bold text-slate-500"></p>
+          </div>
+          <div id="answersGrid" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4"></div>
+        </section>
+      </section>
+    </main>
+
+    <div id="scoreAlert" class="score-alert" role="dialog" aria-modal="true" aria-labelledby="scoreTitle">
+      <div id="fireworks" class="fireworks" aria-hidden="true"></div>
+      <section class="score-card rounded-3xl border border-blue-100 bg-white p-6 text-center shadow-2xl">
+        <p class="text-sm font-black uppercase tracking-[0.18em] text-slate-400">Kết quả DISC</p>
+        <h2 id="scoreTitle" class="mt-2 text-3xl font-black text-[var(--ink)]">Bạn đã hoàn thành</h2>
+        <p id="scoreAlertText" class="mt-4 text-xl font-black text-slate-700"></p>
+        <p id="scoreAlertHint" class="mt-2 text-sm font-bold text-slate-500"></p>
+        <button
+          id="closeScoreAlert"
+          class="mt-6 min-h-11 rounded-xl bg-[var(--ink)] px-6 text-sm font-black text-white shadow-lg shadow-slate-300 transition hover:bg-slate-900"
+          type="button"
+        >
+          Xem đáp án
+        </button>
+      </section>
+    </div>
+
+    <script>
+      const discGroups = [
+        {
+          id: "D",
+          name: "Nhóm D",
+          trait: "Dominance",
+          color: "#e94855",
+          soft: "#fff1f2",
+        },
+        {
+          id: "I",
+          name: "Nhóm I",
+          trait: "Influence",
+          color: "#f4b740",
+          soft: "#fffbeb",
+        },
+        {
+          id: "S",
+          name: "Nhóm S",
+          trait: "Steadiness",
+          color: "#2f80ed",
+          soft: "#eff7ff",
+        },
+        {
+          id: "C",
+          name: "Nhóm C",
+          trait: "Conscientiousness",
+          color: "#17813b",
+          soft: "#f0fdf4",
+        },
+      ];
+
+      const jobs = [
+        { id: "ceo", title: "Trưởng nhóm kinh doanh", detail: "Chốt mục tiêu, thúc đẩy đội bán hàng.", group: "D" },
+        { id: "hunter", title: "Nhân viên phát triển khách hàng mới", detail: "Tìm khách hàng mới và theo đuổi cơ hội khó.", group: "D" },
+        { id: "project", title: "Quản lý dự án mới", detail: "Ra quyết định nhanh trong giai đoạn thử nghiệm.", group: "D" },
+        { id: "sales-lead", title: "Trưởng nhóm phát triển thị trường", detail: "Mở vùng bán hàng và xử lý cạnh tranh.", group: "D" },
+        { id: "pr", title: "Nhân viên truyền thông", detail: "Xây dựng hình ảnh và câu chuyện thương hiệu.", group: "I" },
+        { id: "marketing", title: "Nhân viên tiếp thị", detail: "Tạo chiến dịch thu hút và lan tỏa thông điệp.", group: "I" },
+        { id: "trainer", title: "Đào tạo nội bộ", detail: "Truyền đạt, khuấy động và dẫn dắt lớp học.", group: "I" },
+        { id: "event", title: "Điều phối sự kiện", detail: "Tạo trải nghiệm, kết nối khách mời và đối tác.", group: "I" },
+        { id: "cs", title: "Chăm sóc khách hàng", detail: "Lắng nghe, hỗ trợ và duy trì sự hài lòng.", group: "S" },
+        { id: "admin", title: "Hành chính văn phòng", detail: "Giữ nhịp vận hành ổn định hằng ngày.", group: "S" },
+        { id: "assistant", title: "Trợ lý điều phối", detail: "Theo sát lịch, nhắc việc và hỗ trợ các bên.", group: "S" },
+        { id: "hr-ops", title: "Nhân sự vận hành", detail: "Chăm lo quy trình nhân sự và trải nghiệm nội bộ.", group: "S" },
+        { id: "accountant", title: "Kế toán", detail: "Làm việc với số liệu, chứng từ và chuẩn mực.", group: "C" },
+        { id: "auditor", title: "Kiểm toán nội bộ", detail: "Rà soát sai lệch và kiểm soát tuân thủ.", group: "C" },
+        { id: "qa", title: "QA/QC", detail: "Kiểm tra chất lượng theo tiêu chuẩn đã định.", group: "C" },
+      ];
+
+      let draggedCard = null;
+      let selectedCard = null;
+
+      function shuffle(items) {
+        return [...items].sort(() => Math.random() - 0.5);
+      }
+
+      function initGame() {
+        clearSelectedCard();
+        closeScoreAlert();
+        renderPool();
+        renderZones();
+        renderAnswers();
+        document.getElementById("answersPanel").classList.add("hidden");
+        document.getElementById("scoreText").textContent = "";
+      }
+
+      function renderPool() {
+        const pool = document.getElementById("jobPool");
+        pool.innerHTML = "";
+        shuffle(jobs).forEach((job) => pool.appendChild(createJobCard(job)));
+      }
+
+      function createJobCard(job) {
+        const card = document.createElement("div");
+        card.className = "job-card rounded-2xl border border-blue-100 bg-white p-4";
+        card.draggable = true;
+        card.dataset.id = job.id;
+        card.dataset.group = job.group;
+        card.innerHTML = `
+          <p class="text-base font-black text-[var(--ink)]">${job.title}</p>
+          <button class="remove-job" type="button" aria-label="Xóa ${job.title} khỏi nhóm">×</button>
+        `;
+        card.addEventListener("dragstart", handleDragStart);
+        card.addEventListener("dragend", handleDragEnd);
+        card.addEventListener("click", handleCardClick);
+        return card;
+      }
+
+      function renderZones() {
+        const zones = document.getElementById("discZones");
+        zones.innerHTML = "";
+
+        discGroups.forEach((group) => {
+          const zone = document.createElement("article");
+          zone.className = "disc-zone rounded-3xl border border-dashed bg-white/86 p-5";
+          zone.dataset.group = group.id;
+          zone.style.setProperty("--zone-color", group.color);
+          zone.style.setProperty("--zone-soft", group.soft);
+          zone.style.borderColor = group.color + "55";
+          zone.innerHTML = `
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-400">${group.trait}</p>
+                <h2 class="mt-2 text-2xl font-black" style="color: ${group.color};">${group.name}</h2>
+              </div>
+              <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-xl font-black text-white" style="background: ${group.color};">
+                ${group.id}
+              </div>
+            </div>
+            <div class="zone-drop mt-4" aria-label="${group.name}"></div>
+          `;
+          zone.addEventListener("dragover", handleDragOver);
+          zone.addEventListener("dragenter", handleDragEnter);
+          zone.addEventListener("dragleave", handleDragLeave);
+          zone.addEventListener("drop", handleDrop);
+          zone.addEventListener("click", handleZoneClick);
+          zones.appendChild(zone);
+        });
+      }
+
+      function renderAnswers() {
+        const grid = document.getElementById("answersGrid");
+        grid.innerHTML = discGroups
+          .map((group) => {
+            const groupJobs = jobs
+              .filter((job) => job.group === group.id)
+              .map(
+                (job) =>
+                  `<li class="answer-job rounded-xl bg-white/80 px-3 py-2 text-sm font-bold text-slate-700" data-job-id="${job.id}">${job.title}</li>`
+              )
+              .join("");
+
+            return `
+              <article class="answer-card rounded-3xl border border-blue-100 bg-white p-5">
+                <div class="mb-4 flex items-center gap-3">
+                  <div class="grid h-12 w-12 place-items-center rounded-xl text-xl font-black text-white" style="background: ${group.color};">
+                    ${group.id}
+                  </div>
+                  <div>
+                    <p class="text-lg font-black text-[var(--ink)]">${group.name}</p>
+                    <p class="text-xs font-black uppercase tracking-[0.14em] text-slate-400">${group.trait}</p>
+                  </div>
+                </div>
+                <ul class="grid gap-2">${groupJobs}</ul>
+              </article>
+            `;
+          })
+          .join("");
+      }
+
+      function handleDragStart(event) {
+        draggedCard = event.currentTarget;
+        draggedCard.classList.add("dragging");
+      }
+
+      function handleDragEnd() {
+        if (draggedCard) {
+          draggedCard.classList.remove("dragging");
+        }
+        draggedCard = null;
+      }
+
+      function handleDragOver(event) {
+        event.preventDefault();
+      }
+
+      function handleDragEnter(event) {
+        event.currentTarget.classList.add("drag-over");
+      }
+
+      function handleDragLeave(event) {
+        event.currentTarget.classList.remove("drag-over");
+      }
+
+      function handleDrop(event) {
+        event.preventDefault();
+        const zone = event.currentTarget;
+        zone.classList.remove("drag-over", "correct", "wrong");
+        if (!draggedCard) return;
+        placeCardInZone(draggedCard, zone);
+      }
+
+      function handleCardClick(event) {
+        const card = event.currentTarget;
+        if (event.target.closest(".remove-job")) {
+          returnCardToPool(card);
+          return;
+        }
+
+        if (selectedCard === card) {
+          clearSelectedCard();
+          return;
+        }
+
+        clearSelectedCard();
+        selectedCard = card;
+        selectedCard.classList.add("selected");
+        document.getElementById("selectedText").textContent = `Đang chọn: ${card.querySelector("p").textContent}`;
+      }
+
+      function handleZoneClick(event) {
+        const zone = event.currentTarget;
+        if (!selectedCard || event.target.closest(".job-card")) return;
+        placeCardInZone(selectedCard, zone);
+        clearSelectedCard();
+      }
+
+      function placeCardInZone(card, zone) {
+        const drop = zone.querySelector(".zone-drop");
+        zone.classList.remove("correct", "wrong");
+        card.classList.remove("border-green-500", "bg-green-50", "border-red-500", "bg-red-50");
+        drop.appendChild(card);
+      }
+
+      function returnCardToPool(card) {
+        const pool = document.getElementById("jobPool");
+        card.classList.remove(
+          "selected",
+          "border-green-500",
+          "bg-green-50",
+          "border-red-500",
+          "bg-red-50"
+        );
+        pool.appendChild(card);
+
+        if (selectedCard === card) {
+          clearSelectedCard();
+        }
+      }
+
+      function clearSelectedCard() {
+        if (selectedCard) {
+          selectedCard.classList.remove("selected");
+        }
+        selectedCard = null;
+        const selectedText = document.getElementById("selectedText");
+        if (selectedText) {
+          selectedText.textContent = "Chọn một vị trí để đặt vào nhóm DISC.";
+        }
+      }
+
+      function submitAnswers() {
+        let correct = 0;
+        const correctJobIds = [];
+
+        document.querySelectorAll(".disc-zone").forEach((zone) => {
+          const cards = [...zone.querySelectorAll(".job-card")];
+          const allCorrect = cards.length > 0 && cards.every((card) => card.dataset.group === zone.dataset.group);
+          zone.classList.remove("correct", "wrong");
+          zone.classList.add(allCorrect ? "correct" : "wrong");
+
+          cards.forEach((card) => {
+            const isCorrect = card.dataset.group === zone.dataset.group;
+            if (isCorrect) {
+              correct++;
+              correctJobIds.push(card.dataset.id);
+            }
+            card.classList.toggle("border-green-500", isCorrect);
+            card.classList.toggle("bg-green-50", isCorrect);
+            card.classList.toggle("border-red-500", !isCorrect);
+            card.classList.toggle("bg-red-50", !isCorrect);
+          });
+        });
+
+        const unplaced = document.querySelectorAll("#jobPool .job-card").length;
+        const scoreMessage = `${correct}/${jobs.length} vị trí đúng${unplaced ? `, còn ${unplaced} vị trí chưa đặt` : ""}`;
+        document.getElementById("scoreText").textContent = scoreMessage;
+        updateAnswerHighlights(correctJobIds);
+        document.getElementById("answersPanel").classList.remove("hidden");
+        showScoreAlert(correct, unplaced, scoreMessage);
+      }
+
+      function updateAnswerHighlights(correctJobIds) {
+        const correctSet = new Set(correctJobIds);
+
+        document.querySelectorAll(".answer-job").forEach((item) => {
+          item.classList.toggle("done-correct", correctSet.has(item.dataset.jobId));
+        });
+      }
+
+      function showScoreAlert(correct, unplaced, scoreMessage) {
+        const alert = document.getElementById("scoreAlert");
+        document.getElementById("scoreAlertText").textContent = scoreMessage;
+        document.getElementById("scoreAlertHint").textContent =
+          unplaced > 0 ? "Bạn có thể đóng thông báo để hoàn thiện các vị trí còn lại." : "Đóng thông báo để xem bảng đáp án chi tiết.";
+        alert.classList.add("show");
+        launchFireworks(correct);
+      }
+
+      function closeScoreAlert() {
+        const alert = document.getElementById("scoreAlert");
+        const fireworks = document.getElementById("fireworks");
+
+        if (alert) {
+          alert.classList.remove("show");
+        }
+
+        if (fireworks) {
+          fireworks.innerHTML = "";
+        }
+      }
+
+      function launchFireworks(correct) {
+        const fireworks = document.getElementById("fireworks");
+        const colors = ["#e94855", "#f4b740", "#2f80ed", "#17813b", "#20c5b5"];
+        const bursts = Math.max(4, Math.min(8, Math.ceil(correct / 3)));
+
+        fireworks.innerHTML = "";
+
+        for (let burst = 0; burst < bursts; burst++) {
+          const centerX = 16 + Math.random() * 68;
+          const centerY = 14 + Math.random() * 46;
+          const particles = 18;
+
+          for (let index = 0; index < particles; index++) {
+            const angle = (Math.PI * 2 * index) / particles;
+            const distance = 70 + Math.random() * 92;
+            const particle = document.createElement("span");
+
+            particle.className = "firework-particle";
+            particle.style.setProperty("--spark-x", `${centerX}vw`);
+            particle.style.setProperty("--spark-y", `${centerY}vh`);
+            particle.style.setProperty("--spark-dx", `${Math.cos(angle) * distance}px`);
+            particle.style.setProperty("--spark-dy", `${Math.sin(angle) * distance}px`);
+            particle.style.setProperty("--spark-color", colors[(index + burst) % colors.length]);
+            particle.style.animationDelay = `${burst * 110}ms`;
+            fireworks.appendChild(particle);
+          }
+        }
+      }
+
+      document.getElementById("submitBtn").addEventListener("click", submitAnswers);
+      document.getElementById("resetBtn").addEventListener("click", initGame);
+      document.getElementById("closeScoreAlert").addEventListener("click", () => {
+        closeScoreAlert();
+        document.getElementById("answersPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+
+      initGame();
+    </script>
+  </body>
+</html>
